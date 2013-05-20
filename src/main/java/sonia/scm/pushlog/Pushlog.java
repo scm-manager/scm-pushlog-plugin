@@ -72,7 +72,10 @@ public class Pushlog implements Serializable
    */
   public void put(String id, String username)
   {
-    getChangesetMapping().put(id, username);
+    if (!getChangesetMapping().containsKey(id))
+    {
+      getChangesetMapping().put(id, username);
+    }
   }
 
   //~--- get methods ----------------------------------------------------------
