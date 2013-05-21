@@ -33,21 +33,20 @@ package sonia.scm.pushlog;
 
 //~--- non-JDK imports --------------------------------------------------------
 
-import com.google.common.collect.Maps;
+import com.google.common.collect.Lists;
 
-import sonia.scm.xml.XmlMapStringAdapter;
+import sonia.scm.security.KeyGenerator;
 
 //~--- JDK imports ------------------------------------------------------------
 
 import java.io.Serializable;
 
-import java.util.Map;
+import java.util.List;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 /**
  *
@@ -86,26 +85,17 @@ public class Pushlog implements Serializable
    * Method description
    *
    *
-   * @param id
    * @param username
-   */
-  public void put(String id, String username)
-  {
-    if (!getChangesetMapping().containsKey(id))
-    {
-      getChangesetMapping().put(id, username);
-    }
-  }
-
-  /**
-   * Method description
-   *
    *
    * @return
    */
-  public int size()
+  public PushlogEntry createEntry(String username)
   {
-    return changesetMapping.size();
+    PushlogEntry entry = new PushlogEntry(++lastEntryId, username);
+
+    getEntries().add(entry);
+
+    return entry;
   }
 
   //~--- get methods ----------------------------------------------------------
@@ -120,7 +110,60 @@ public class Pushlog implements Serializable
    */
   public String get(String id)
   {
-    return getChangesetMapping().get(id);
+    String username = null;
+
+    for (PushlogEntry entry : entries)
+    {
+      if (entry.contains(id))
+      {
+        username = entry.getUsername();
+
+        break;
+      }
+    }
+
+    return username;
+  }
+
+  /**
+   * Method description
+   *
+   *
+   * @return
+   */
+  public List<PushlogEntry> getEntries()
+  {
+    if (entries == null)
+    {
+      entries = Lists.newArrayList();
+    }
+
+    return entries;
+  }
+
+  /**
+   * Method description
+   *
+   *
+   * @param id
+   *
+   * @return
+   */
+  public PushlogEntry getEntry(long id)
+  {
+    PushlogEntry entry = null;
+
+    for (PushlogEntry e : entries)
+    {
+      if (e.getId() == id)
+      {
+        entry = e;
+
+        break;
+      }
+    }
+
+    return entry;
   }
 
   /**
@@ -134,28 +177,14 @@ public class Pushlog implements Serializable
     return repositoryId;
   }
 
-  /**
-   * Method description
-   *
-   *
-   * @return
-   */
-  private Map<String, String> getChangesetMapping()
-  {
-    if (changesetMapping == null)
-    {
-      changesetMapping = Maps.newHashMap();
-    }
-
-    return changesetMapping;
-  }
-
   //~--- fields ---------------------------------------------------------------
 
   /** Field description */
-  @XmlElement(name = "changeset-mapping")
-  @XmlJavaTypeAdapter(XmlMapStringAdapter.class)
-  private Map<String, String> changesetMapping;
+  private List<PushlogEntry> entries;
+
+  /** Field description */
+  @XmlElement(name = "last-entry-id")
+  private long lastEntryId = 0;
 
   /** Field description */
   @XmlElement(name = "repository-id")

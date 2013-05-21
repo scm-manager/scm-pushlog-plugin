@@ -33,47 +33,45 @@ package sonia.scm.pushlog;
 
 //~--- non-JDK imports --------------------------------------------------------
 
-import com.google.inject.Inject;
+import com.google.common.collect.Lists;
 
-import org.apache.shiro.SecurityUtils;
-import org.apache.shiro.subject.Subject;
+//~--- JDK imports ------------------------------------------------------------
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.List;
 
-import sonia.scm.plugin.ext.Extension;
-import sonia.scm.repository.Changeset;
-import sonia.scm.repository.PostReceiveRepositoryHook;
-import sonia.scm.repository.Repository;
-import sonia.scm.repository.RepositoryHookEvent;
-import sonia.scm.security.Role;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlElementWrapper;
+import javax.xml.bind.annotation.XmlRootElement;
 
 /**
  *
  * @author Sebastian Sdorra
  */
-@Extension
-public class PushlogHook extends PostReceiveRepositoryHook
+@XmlRootElement(name = "push")
+@XmlAccessorType(XmlAccessType.FIELD)
+public class PushlogEntry
 {
 
   /**
-   * the logger for PushlogHook
+   * Constructs ...
+   *
    */
-  private static final Logger logger =
-    LoggerFactory.getLogger(PushlogHook.class);
-
-  //~--- constructors ---------------------------------------------------------
+  public PushlogEntry() {}
 
   /**
    * Constructs ...
    *
    *
-   * @param pushlogManager
+   *
+   * @param id
+   * @param username
    */
-  @Inject
-  public PushlogHook(PushlogManager pushlogManager)
+  public PushlogEntry(long id, String username)
   {
-    this.pushlogManager = pushlogManager;
+    this.id = id;
+    this.username = username;
   }
 
   //~--- methods --------------------------------------------------------------
@@ -82,47 +80,76 @@ public class PushlogHook extends PostReceiveRepositoryHook
    * Method description
    *
    *
-   * @param event
+   * @param id
    */
-  @Override
-  public void onEvent(RepositoryHookEvent event)
+  public void add(String id)
   {
-    Subject subject = SecurityUtils.getSubject();
+    getChangesets().add(id);
+  }
 
-    if (subject.hasRole(Role.USER))
+  /**
+   * Method description
+   *
+   *
+   * @param id
+   *
+   * @return
+   */
+  public boolean contains(String id)
+  {
+    return getChangesets().contains(id);
+  }
+
+  //~--- get methods ----------------------------------------------------------
+
+  /**
+   * Method description
+   *
+   *
+   * @return
+   */
+  public long getId()
+  {
+    return id;
+  }
+
+  /**
+   * Method description
+   *
+   *
+   * @return
+   */
+  public String getUsername()
+  {
+    return username;
+  }
+
+  /**
+   * Method description
+   *
+   *
+   * @return
+   */
+  private List<String> getChangesets()
+  {
+    if (changesets == null)
     {
-      String username = (String) subject.getPrincipal();
-      Repository repository = event.getRepository();
-
-      Pushlog pushlog = null;
-
-      try
-      {
-        pushlog = pushlogManager.getAndLock(repository);
-        PushlogEntry entry = pushlog.createEntry(username);
-
-        for (Changeset c : event.getChangesets())
-        {
-          entry.add(c.getId());
-        }
-
-      }
-      finally
-      {
-        if (pushlog != null)
-        {
-          pushlogManager.store(pushlog);
-        }
-      }
+      changesets = Lists.newArrayList();
     }
-    else if (logger.isWarnEnabled())
-    {
-      logger.warn("subject has no user role, skip pushlog");
-    }
+
+    return changesets;
   }
 
   //~--- fields ---------------------------------------------------------------
 
   /** Field description */
-  private PushlogManager pushlogManager;
+  @XmlElement(name = "changeset")
+  @XmlElementWrapper(name = "changesets")
+  private List<String> changesets;
+
+  /** Field description */
+  private long id;
+
+  /** Field description */
+  private String username;
 }

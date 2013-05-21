@@ -75,7 +75,7 @@ public class PushlogManagerTest extends AbstractTestBase
 
     ExecutorService service = Executors.newFixedThreadPool(10);
 
-    for (int i = 0; i < 1000; i++)
+    for (int i = 0; i < 100; i++)
     {
       service.execute(new Runnable()
       {
@@ -87,11 +87,12 @@ public class PushlogManagerTest extends AbstractTestBase
 
           try
           {
-            pushlog = manager.get(repository);
+            pushlog = manager.getAndLock(repository);
 
+            PushlogEntry entry = pushlog.createEntry("user");
             for (int i = 0; i < 10; i++)
             {
-              pushlog.put("c" + counter.incrementAndGet(), "username");
+              entry.add( "c" + counter.incrementAndGet() );
             }
 
           }
@@ -106,6 +107,6 @@ public class PushlogManagerTest extends AbstractTestBase
     service.shutdown();
     service.awaitTermination(5, TimeUnit.MINUTES);
 
-    assertEquals(10000, manager.get(repository).size());
+    assertEquals(100, manager.get(repository).getEntries().size());
   }
 }
