@@ -44,7 +44,6 @@ import java.util.List;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 
 /**
@@ -114,7 +113,7 @@ public class Pushlog implements Serializable
   {
     String username = null;
 
-    for (PushlogEntry entry : entries)
+    for (PushlogEntry entry : getEntries())
     {
       if (entry.contains(id))
       {
@@ -166,7 +165,7 @@ public class Pushlog implements Serializable
   {
     PushlogEntry entry = null;
 
-    for (PushlogEntry e : entries)
+    for (PushlogEntry e : getEntries())
     {
       if (e.getId() == id)
       {
@@ -198,7 +197,6 @@ public class Pushlog implements Serializable
 
   /** Field description */
   @XmlElement(name = "entry")
-  @XmlElementWrapper(name = "entries")
   private List<PushlogEntry> entries;
 
   /** Field description */
