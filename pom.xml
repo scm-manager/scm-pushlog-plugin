@@ -14,7 +14,7 @@
   <packaging>jar</packaging>
   <version>1.0-SNAPSHOT</version>
   <name>${project.artifactId}</name>
-  <description>plugin description</description>
+  <description>Tracks who pushed what to a repository.</description>
 
   <dependencies>
 
@@ -30,6 +30,13 @@
     <dependency>
       <groupId>sonia.scm</groupId>
       <artifactId>scm-test</artifactId>
+      <version>${project.parent.version}</version>
+      <scope>test</scope>
+    </dependency>
+    
+    <dependency>
+      <groupId>sonia.scm</groupId>
+      <artifactId>scm-dao-xml</artifactId>
       <version>${project.parent.version}</version>
       <scope>test</scope>
     </dependency>

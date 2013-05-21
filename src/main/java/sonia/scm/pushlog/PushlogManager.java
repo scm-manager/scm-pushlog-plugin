@@ -33,15 +33,25 @@ package sonia.scm.pushlog;
 
 //~--- non-JDK imports --------------------------------------------------------
 
+import com.google.common.collect.Maps;
 import com.google.common.eventbus.Subscribe;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sonia.scm.HandlerEvent;
 import sonia.scm.repository.Repository;
 import sonia.scm.repository.RepositoryEvent;
 import sonia.scm.store.DataStore;
 import sonia.scm.store.DataStoreFactory;
+
+//~--- JDK imports ------------------------------------------------------------
+
+import java.util.Map;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  *
@@ -53,6 +63,18 @@ public class PushlogManager
 
   /** Field description */
   private static final String NAME = "pushlog";
+
+  /**
+   * the logger for PushlogManager
+   */
+  private static final Logger logger =
+    LoggerFactory.getLogger(PushlogManager.class);
+
+  /** Field description */
+  private static final Object LOCK_STORE = new Object();
+
+  /** Field description */
+  private static final Object LOCK_GET = new Object();
 
   //~--- constructors ---------------------------------------------------------
 
@@ -85,6 +107,31 @@ public class PushlogManager
     }
   }
 
+  /**
+   * Method description
+   *
+   *
+   * @param repository
+   * @param pushlog
+   */
+  public void store(Pushlog pushlog)
+  {
+    synchronized (LOCK_STORE)
+    {
+      try
+      {
+        logger.debug("store pushlog for repository {}",
+          pushlog.getRepositoryId());
+        pushlogStore.put(pushlog.getRepositoryId(), pushlog);
+      }
+      finally
+      {
+        logger.trace("unlock repository {}", pushlog.getRepositoryId());
+        getLock(pushlog.getRepositoryId()).unlock();
+      }
+    }
+  }
+
   //~--- get methods ----------------------------------------------------------
 
   /**
@@ -101,27 +148,59 @@ public class PushlogManager
 
     if (pushlog == null)
     {
-      pushlog = new Pushlog();
+      pushlog = new Pushlog(repository.getId());
     }
 
     return pushlog;
   }
-
-  //~--- set methods ----------------------------------------------------------
 
   /**
    * Method description
    *
    *
    * @param repository
-   * @param pushlog
+   *
+   * @return
    */
-  public void store(Repository repository, Pushlog pushlog)
+  public Pushlog getAndLock(Repository repository)
   {
-    pushlogStore.put(repository.getId(), pushlog);
+    synchronized (LOCK_GET)
+    {
+      getLock(repository.getId()).lock();
+
+      logger.trace("lock pushlog for repository {}", repository.getId());
+
+      return get(repository);
+    }
+  }
+
+  /**
+   * Method description
+   *
+   *
+   * @param repository
+   *
+   * @param id
+   *
+   * @return
+   */
+  private Lock getLock(String id)
+  {
+    Lock lock = locks.get(id);
+
+    if (lock == null)
+    {
+      lock = new ReentrantLock();
+      locks.put(id, lock);
+    }
+
+    return lock;
   }
 
   //~--- fields ---------------------------------------------------------------
+
+  /** Field description */
+  private Map<String, Lock> locks = Maps.newHashMap();
 
   /** Field description */
   private DataStore<Pushlog> pushlogStore;

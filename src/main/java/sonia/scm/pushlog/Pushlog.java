@@ -61,6 +61,25 @@ public class Pushlog implements Serializable
   /** Field description */
   private static final long serialVersionUID = 6674106880546613670L;
 
+  //~--- constructors ---------------------------------------------------------
+
+  /**
+   * Constructs ...
+   *
+   */
+  public Pushlog() {}
+
+  /**
+   * Constructs ...
+   *
+   *
+   * @param repositoryId
+   */
+  public Pushlog(String repositoryId)
+  {
+    this.repositoryId = repositoryId;
+  }
+
   //~--- methods --------------------------------------------------------------
 
   /**
@@ -78,6 +97,17 @@ public class Pushlog implements Serializable
     }
   }
 
+  /**
+   * Method description
+   *
+   *
+   * @return
+   */
+  public int size()
+  {
+    return changesetMapping.size();
+  }
+
   //~--- get methods ----------------------------------------------------------
 
   /**
@@ -91,6 +121,17 @@ public class Pushlog implements Serializable
   public String get(String id)
   {
     return getChangesetMapping().get(id);
+  }
+
+  /**
+   * Method description
+   *
+   *
+   * @return
+   */
+  public String getRepositoryId()
+  {
+    return repositoryId;
   }
 
   /**
@@ -115,4 +156,8 @@ public class Pushlog implements Serializable
   @XmlElement(name = "changeset-mapping")
   @XmlJavaTypeAdapter(XmlMapStringAdapter.class)
   private Map<String, String> changesetMapping;
+
+  /** Field description */
+  @XmlElement(name = "repository-id")
+  private String repositoryId;
 }

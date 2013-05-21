@@ -33,95 +33,79 @@ package sonia.scm.pushlog;
 
 //~--- non-JDK imports --------------------------------------------------------
 
-import com.google.inject.Inject;
+import org.junit.Test;
 
-import org.apache.shiro.SecurityUtils;
-import org.apache.shiro.subject.Subject;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import sonia.scm.plugin.ext.Extension;
-import sonia.scm.repository.Changeset;
-import sonia.scm.repository.PostReceiveRepositoryHook;
+import sonia.scm.AbstractTestBase;
 import sonia.scm.repository.Repository;
-import sonia.scm.repository.RepositoryHookEvent;
-import sonia.scm.security.Role;
+import sonia.scm.security.UUIDKeyGenerator;
+import sonia.scm.store.DataStoreFactory;
+import sonia.scm.store.JAXBDataStoreFactory;
+
+import static org.junit.Assert.*;
+
+//~--- JDK imports ------------------------------------------------------------
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  *
  * @author Sebastian Sdorra
  */
-@Extension
-public class PushlogHook extends PostReceiveRepositoryHook
+public class PushlogManagerTest extends AbstractTestBase
 {
-
-  /**
-   * the logger for PushlogHook
-   */
-  private static final Logger logger =
-    LoggerFactory.getLogger(PushlogHook.class);
-
-  //~--- constructors ---------------------------------------------------------
-
-  /**
-   * Constructs ...
-   *
-   *
-   * @param pushlogManager
-   */
-  @Inject
-  public PushlogHook(PushlogManager pushlogManager)
-  {
-    this.pushlogManager = pushlogManager;
-  }
-
-  //~--- methods --------------------------------------------------------------
 
   /**
    * Method description
    *
    *
-   * @param event
+   * @throws InterruptedException
    */
-  @Override
-  public void onEvent(RepositoryHookEvent event)
+  @Test
+  public void testConcurrent() throws InterruptedException
   {
-    Subject subject = SecurityUtils.getSubject();
+    DataStoreFactory dataStoreFactory =
+      new JAXBDataStoreFactory(contextProvider, new UUIDKeyGenerator());
+    final PushlogManager manager = new PushlogManager(dataStoreFactory);
+    final Repository repository = new Repository("abc", "git", "abc");
 
-    if (subject.hasRole(Role.USER))
+    final AtomicLong counter = new AtomicLong();
+
+    ExecutorService service = Executors.newFixedThreadPool(10);
+
+    for (int i = 0; i < 1000; i++)
     {
-      String username = (String) subject.getPrincipal();
-      Repository repository = event.getRepository();
-
-      Pushlog pushlog = null;
-
-      try
+      service.execute(new Runnable()
       {
-        pushlog = pushlogManager.getAndLock(repository);
 
-        for (Changeset c : event.getChangesets())
+        @Override
+        public void run()
         {
-          pushlog.put(c.getId(), username);
-        }
+          Pushlog pushlog = null;
 
-      }
-      finally
-      {
-        if (pushlog != null)
-        {
-          pushlogManager.store(pushlog);
+          try
+          {
+            pushlog = manager.get(repository);
+
+            for (int i = 0; i < 10; i++)
+            {
+              pushlog.put("c" + counter.incrementAndGet(), "username");
+            }
+
+          }
+          finally
+          {
+            manager.store(pushlog);
+          }
         }
-      }
+      });
     }
-    else if (logger.isWarnEnabled())
-    {
-      logger.warn("subject has no user role, skip pushlog");
-    }
+
+    service.shutdown();
+    service.awaitTermination(5, TimeUnit.MINUTES);
+
+    assertEquals(10000, manager.get(repository).size());
   }
-
-  //~--- fields ---------------------------------------------------------------
-
-  /** Field description */
-  private PushlogManager pushlogManager;
 }
