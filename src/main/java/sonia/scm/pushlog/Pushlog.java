@@ -35,8 +35,6 @@ package sonia.scm.pushlog;
 
 import com.google.common.collect.Lists;
 
-import sonia.scm.security.KeyGenerator;
-
 //~--- JDK imports ------------------------------------------------------------
 
 import java.io.Serializable;
@@ -57,6 +55,9 @@ import javax.xml.bind.annotation.XmlRootElement;
 @XmlAccessorType(XmlAccessType.FIELD)
 public class Pushlog implements Serializable
 {
+
+  /** Field description */
+  private static final int DATA_VERSION = 1;
 
   /** Field description */
   private static final long serialVersionUID = 6674106880546613670L;
@@ -132,6 +133,17 @@ public class Pushlog implements Serializable
    *
    * @return
    */
+  public int getDataVersion()
+  {
+    return dataVersion;
+  }
+
+  /**
+   * Method description
+   *
+   *
+   * @return
+   */
   public List<PushlogEntry> getEntries()
   {
     if (entries == null)
@@ -181,7 +193,11 @@ public class Pushlog implements Serializable
   //~--- fields ---------------------------------------------------------------
 
   /** Field description */
-  @XmlElement(name="entry")
+  @XmlElement(name = "data-version")
+  private int dataVersion = DATA_VERSION;
+
+  /** Field description */
+  @XmlElement(name = "entry")
   @XmlElementWrapper(name = "entries")
   private List<PushlogEntry> entries;
 
