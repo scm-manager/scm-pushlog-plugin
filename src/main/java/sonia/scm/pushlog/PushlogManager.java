@@ -36,7 +36,6 @@ import com.google.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sonia.scm.HandlerEventType;
-import sonia.scm.event.HandlerEvent;
 import sonia.scm.repository.Repository;
 import sonia.scm.repository.RepositoryEvent;
 import sonia.scm.store.DataStore;

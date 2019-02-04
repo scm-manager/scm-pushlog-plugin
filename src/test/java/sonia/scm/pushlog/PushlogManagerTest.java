@@ -30,23 +30,19 @@
 package sonia.scm.pushlog;
 
 import org.junit.Test;
-
 import sonia.scm.AbstractTestBase;
 import sonia.scm.repository.Repository;
-import sonia.scm.repository.RepositoryLocationResolver;
-import sonia.scm.security.UUIDKeyGenerator;
 import sonia.scm.store.DataStoreFactory;
 import sonia.scm.store.InMemoryDataStoreFactory;
-import sonia.scm.store.JAXBDataStoreFactory;
-
-import static org.junit.Assert.*;
-
-//~--- JDK imports ------------------------------------------------------------
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+
+import static org.junit.Assert.assertEquals;
+
+//~--- JDK imports ------------------------------------------------------------
 
 /**
  *
