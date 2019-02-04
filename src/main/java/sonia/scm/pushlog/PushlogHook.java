@@ -33,6 +33,7 @@ package sonia.scm.pushlog;
 
 import com.github.legman.Subscribe;
 import com.google.common.base.Strings;
+import com.google.common.collect.Iterables;
 import com.google.inject.Inject;
 
 import org.apache.shiro.SecurityUtils;
@@ -104,7 +105,7 @@ public class PushlogHook {
 
         } finally {
             if (pushlog != null) {
-                pushlogManager.store(pushlog);
+                pushlogManager.store(pushlog, repository);
             }
         }
     }
@@ -114,9 +115,9 @@ public class PushlogHook {
         Repository repository = event.getRepository();
 
         if (repository != null) {
-            Collection<Changeset> changesets = event.getContext().getChangesetProvider().getChangesetList();
+            Iterable<Changeset> changesets = event.getContext().getChangesetProvider().getChangesets();
 
-            if (Util.isNotEmpty(changesets)) {
+            if (!Iterables.isEmpty(changesets)) {
                 handlePush(username, repository, changesets);
             } else {
                 logger.warn("received hook without changesets");

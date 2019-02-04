@@ -32,8 +32,11 @@ package sonia.scm.pushlog;
 import org.junit.Test;
 import sonia.scm.AbstractTestBase;
 import sonia.scm.repository.Repository;
+import sonia.scm.store.DataStore;
 import sonia.scm.store.DataStoreFactory;
+import sonia.scm.store.InMemoryDataStore;
 import sonia.scm.store.InMemoryDataStoreFactory;
+import sonia.scm.store.TypedStoreParameters;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -52,7 +55,8 @@ public class PushlogManagerTest extends AbstractTestBase {
 
     @Test
     public void testConcurrent() throws InterruptedException {
-        DataStoreFactory factory = new InMemoryDataStoreFactory();
+        final InMemoryDataStore dataStore = new InMemoryDataStore<Pushlog>();
+        DataStoreFactory factory = new InMemoryDataStoreFactory(dataStore);
         final PushlogManager manager = new PushlogManager(factory);
         final Repository repository = new Repository("abc", "git", "abc", "def");
 
@@ -73,7 +77,7 @@ public class PushlogManagerTest extends AbstractTestBase {
                     }
 
                 } finally {
-                    manager.store(pushlog);
+                    manager.store(pushlog, repository);
                 }
             });
         }

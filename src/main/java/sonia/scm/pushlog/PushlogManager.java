@@ -29,15 +29,12 @@
 
 package sonia.scm.pushlog;
 
-import com.github.legman.Subscribe;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sonia.scm.HandlerEventType;
 import sonia.scm.repository.Repository;
-import sonia.scm.repository.RepositoryEvent;
 import sonia.scm.store.DataStore;
 import sonia.scm.store.DataStoreFactory;
 
@@ -46,7 +43,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- *
  * @author Sebastian Sdorra
  */
 @Singleton
@@ -61,29 +57,21 @@ public class PushlogManager {
     private static final Object LOCK_GET = new Object();
 
     private Map<String, Lock> locks = Maps.newHashMap();
-    private DataStore<Pushlog> pushlogStore;
+    private DataStoreFactory dataStoreFactory;
 
 
     @Inject
     public PushlogManager(DataStoreFactory dataStoreFactory) {
-        pushlogStore = dataStoreFactory.withType(Pushlog.class).withName(NAME).build();
+        this.dataStoreFactory = dataStoreFactory;
     }
 
 
-    @Subscribe
-    public void handleEvent(RepositoryEvent event) {
-        if (event.getEventType() == HandlerEventType.DELETE) {
-            pushlogStore.remove(event.getItem().getId());
-        }
-    }
-
-
-    public void store(Pushlog pushlog) {
+    public void store(Pushlog pushlog, Repository repository) {
         synchronized (LOCK_STORE) {
             try {
                 logger.debug("store pushlog for repository {}",
                         pushlog.getRepositoryId());
-                pushlogStore.put(pushlog.getRepositoryId(), pushlog);
+                getDatastore(repository).put(pushlog.getRepositoryId(), pushlog);
             } finally {
                 logger.trace("unlock repository {}", pushlog.getRepositoryId());
                 getLock(pushlog.getRepositoryId()).unlock();
@@ -92,7 +80,7 @@ public class PushlogManager {
     }
 
     public Pushlog get(Repository repository) {
-        Pushlog pushlog = pushlogStore.get(repository.getId());
+        Pushlog pushlog = getDatastore(repository).get(repository.getId());
 
         if (pushlog == null) {
             pushlog = new Pushlog(repository.getId());
@@ -100,6 +88,11 @@ public class PushlogManager {
 
         return pushlog;
     }
+
+    private DataStore<Pushlog> getDatastore(Repository repository) {
+        return dataStoreFactory.withType(Pushlog.class).withName(NAME).forRepository(repository).build();
+    }
+
 
     public Pushlog getAndLock(Repository repository) {
         synchronized (LOCK_GET) {
