@@ -1,9 +1,9 @@
 /**
  * Copyright (c) 2010, Sebastian Sdorra All rights reserved.
- *
+ * <p>
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- *
+ * <p>
  * 1. Redistributions of source code must retain the above copyright notice,
  * this list of conditions and the following disclaimer. 2. Redistributions in
  * binary form must reproduce the above copyright notice, this list of
@@ -11,7 +11,7 @@
  * materials provided with the distribution. 3. Neither the name of SCM-Manager;
  * nor the names of its contributors may be used to endorse or promote products
  * derived from this software without specific prior written permission.
- *
+ * <p>
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,17 +22,16 @@
  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * <p>
  * http://bitbucket.org/sdorra/scm-manager
- *
  */
-
 
 
 package sonia.scm.pushlog;
 
 //~--- non-JDK imports --------------------------------------------------------
 
+import com.github.legman.Subscribe;
 import com.google.common.base.Strings;
 import com.google.inject.Inject;
 
@@ -42,15 +41,14 @@ import org.apache.shiro.subject.Subject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sonia.scm.plugin.ext.Extension;
+import sonia.scm.plugin.Extension;
 import sonia.scm.repository.Changeset;
-import sonia.scm.repository.PostReceiveRepositoryHook;
+import sonia.scm.repository.PostReceiveRepositoryHookEvent;
 import sonia.scm.repository.Repository;
 import sonia.scm.repository.RepositoryHookEvent;
 import sonia.scm.security.Role;
 import sonia.scm.util.Util;
 
-//~--- JDK imports ------------------------------------------------------------
 
 import java.util.Collection;
 
@@ -59,127 +57,73 @@ import java.util.Collection;
  * @author Sebastian Sdorra
  */
 @Extension
-public class PushlogHook extends PostReceiveRepositoryHook
-{
+public class PushlogHook {
 
-  /**
-   * the logger for PushlogHook
-   */
-  private static final Logger logger =
-    LoggerFactory.getLogger(PushlogHook.class);
 
-  //~--- constructors ---------------------------------------------------------
+    private static final Logger logger =
+            LoggerFactory.getLogger(PushlogHook.class);
+    private PushlogManager pushlogManager;
 
-  /**
-   * Constructs ...
-   *
-   *
-   * @param pushlogManager
-   */
-  @Inject
-  public PushlogHook(PushlogManager pushlogManager)
-  {
-    this.pushlogManager = pushlogManager;
-  }
 
-  //~--- methods --------------------------------------------------------------
-
-  /**
-   * Method description
-   *
-   *
-   * @param event
-   */
-  @Override
-  public void onEvent(RepositoryHookEvent event)
-  {
-    Subject subject = SecurityUtils.getSubject();
-
-    if (subject.hasRole(Role.USER))
-    {
-      String username = (String) subject.getPrincipal();
-
-      if (!Strings.isNullOrEmpty(username))
-      {
-        handlePushEvent(username, event);
-      }
-      else
-      {
-        logger.warn("username is null or empty");
-      }
+    @Inject
+    public PushlogHook(PushlogManager pushlogManager) {
+        this.pushlogManager = pushlogManager;
     }
-    else
-    {
-      logger.warn("subject has no user role, skip pushlog");
+
+
+    @Subscribe
+    public void onEvent(PostReceiveRepositoryHookEvent event) {
+        Subject subject = SecurityUtils.getSubject();
+
+        if (subject.hasRole(Role.USER)) {
+            String username = (String) subject.getPrincipal();
+
+            if (!Strings.isNullOrEmpty(username)) {
+                handlePushEvent(username, event);
+            } else {
+                logger.warn("username is null or empty");
+            }
+        } else {
+            logger.warn("subject has no user role, skip pushlog");
+        }
     }
-  }
 
-  /**
-   * Method description
-   *
-   *
-   * @param username
-   * @param repository
-   * @param changesets
-   */
-  private void handlePush(String username, Repository repository,
-    Iterable<Changeset> changesets)
-  {
-    Pushlog pushlog = null;
 
-    try
-    {
-      pushlog = pushlogManager.getAndLock(repository);
+    private void handlePush(String username, Repository repository,
+                            Iterable<Changeset> changesets) {
+        Pushlog pushlog = null;
 
-      PushlogEntry entry = pushlog.createEntry(username);
+        try {
+            pushlog = pushlogManager.getAndLock(repository);
 
-      for (Changeset c : changesets)
-      {
-        entry.add(c.getId());
-      }
+            PushlogEntry entry = pushlog.createEntry(username);
 
+            for (Changeset c : changesets) {
+                entry.add(c.getId());
+            }
+
+        } finally {
+            if (pushlog != null) {
+                pushlogManager.store(pushlog);
+            }
+        }
     }
-    finally
-    {
-      if (pushlog != null)
-      {
-        pushlogManager.store(pushlog);
-      }
+
+
+    private void handlePushEvent(String username, RepositoryHookEvent event) {
+        Repository repository = event.getRepository();
+
+        if (repository != null) {
+            Collection<Changeset> changesets = event.getContext().getChangesetProvider().getChangesetList();
+
+            if (Util.isNotEmpty(changesets)) {
+                handlePush(username, repository, changesets);
+            } else {
+                logger.warn("received hook without changesets");
+            }
+        } else {
+            logger.warn("received hook without repository");
+        }
     }
-  }
 
-  /**
-   * Method description
-   *
-   *
-   * @param username
-   * @param event
-   */
-  private void handlePushEvent(String username, RepositoryHookEvent event)
-  {
-    Repository repository = event.getRepository();
-
-    if (repository != null)
-    {
-      Collection<Changeset> changesets = event.getChangesets();
-
-      if (Util.isNotEmpty(changesets))
-      {
-        handlePush(username, repository, changesets);
-      }
-      else
-      {
-        logger.warn("received hook without changesets");
-      }
-    }
-    else
-    {
-      logger.warn("received hook without repository");
-    }
-  }
-
-  //~--- fields ---------------------------------------------------------------
-
-  /** Field description */
-  private PushlogManager pushlogManager;
 }

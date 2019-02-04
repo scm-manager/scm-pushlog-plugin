@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plugin SYSTEM "https://download.scm-manager.org/dtd/plugin/2.0.0-01.dtd">
 <!--
 
     Copyright (c) 2010, Sebastian Sdorra
@@ -33,6 +33,8 @@
 -->
 <plugin>
 
+  <scm-version>2</scm-version>
+
   <information>
     <author>Sebastian Sdorra</author>
   </information>
@@ -40,13 +42,5 @@
   <conditions>
     <min-version>${project.parent.version}</min-version>
   </conditions>
-
-  <packages>
-    <package>sonia.scm.pushlog</package>
-  </packages>
-
-  <resources>
-    <script>/scm/sonia.pushlog.js</script>
-  </resources>
 
 </plugin>
