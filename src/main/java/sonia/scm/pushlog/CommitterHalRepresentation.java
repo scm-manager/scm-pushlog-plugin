@@ -8,6 +8,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @AllArgsConstructor
+@SuppressWarnings("squid:S2160") // We do not need an equals method
 public class CommitterHalRepresentation extends HalRepresentation {
     private String name;
 }
