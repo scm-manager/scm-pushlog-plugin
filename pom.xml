@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
   <modelVersion>4.0.0</modelVersion>
 
@@ -14,7 +15,7 @@
   <version>2.0-SNAPSHOT</version>
   <name>${project.artifactId}</name>
   <description>Tracks who pushed what to a repository.</description>
-  
+
   <scm>
     <connection>scm:hg:https://bitbucket.org/sdorra/scm-pushlog-plugin</connection>
     <developerConnection>scm:hg:https://bitbucket.org/sdorra/scm-pushlog-plugin</developerConnection>
@@ -22,14 +23,14 @@
     <tag>HEAD</tag>
   </scm>
 
-
+  <dependencies>
     <dependency>
       <groupId>sonia.scm</groupId>
       <artifactId>scm-test</artifactId>
       <version>${project.parent.version}</version>
       <scope>test</scope>
     </dependency>
-    
+
     <dependency>
       <groupId>sonia.scm</groupId>
       <artifactId>scm-dao-xml</artifactId>
@@ -73,13 +74,13 @@
   </profiles>
 
   <repositories>
-    
+
     <repository>
       <id>maven.scm-manager.org</id>
       <name>scm-manager release repository</name>
       <url>http://maven.scm-manager.org/nexus/content/groups/public</url>
     </repository>
-  
+
   </repositories>
 
 </project>
