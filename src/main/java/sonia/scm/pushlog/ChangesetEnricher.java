@@ -29,7 +29,7 @@ public class ChangesetEnricher implements HalEnricher {
         String username = pushlog.get(changeset.getId());
 
         if (username != null) {
-            appender.appendEmbedded("committer", new CommitterHalRepresentation(username));
+            appender.appendEmbedded("committer", new CommitterDto(username));
         }
     }
 }
