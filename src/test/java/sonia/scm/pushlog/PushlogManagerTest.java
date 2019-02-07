@@ -32,11 +32,9 @@ package sonia.scm.pushlog;
 import org.junit.Test;
 import sonia.scm.AbstractTestBase;
 import sonia.scm.repository.Repository;
-import sonia.scm.store.DataStore;
 import sonia.scm.store.DataStoreFactory;
 import sonia.scm.store.InMemoryDataStore;
 import sonia.scm.store.InMemoryDataStoreFactory;
-import sonia.scm.store.TypedStoreParameters;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
