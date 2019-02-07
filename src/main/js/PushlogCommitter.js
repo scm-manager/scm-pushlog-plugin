@@ -1,5 +1,4 @@
 // @flow
-
 import React from "react";
 import type { Changeset } from "@scm-manager/ui-types";
 import { translate } from "react-i18next";
@@ -10,8 +9,7 @@ type Props = {
   t: string => string
 };
 
-type State = {};
-class PushlogCommitter extends React.Component<Props, State> {
+class PushlogCommitter extends React.Component<Props> {
   render() {
     const { changeset, t } = this.props;
     if (!changeset || !changeset._embedded.committer) {
