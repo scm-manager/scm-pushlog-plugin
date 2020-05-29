@@ -42,72 +42,70 @@ import java.util.concurrent.locks.ReentrantLock;
 @Singleton
 public class PushlogManager {
 
-    private static final String NAME = "pushlog";
+  private static final String NAME = "pushlog";
 
-    private static final Logger logger =
-            LoggerFactory.getLogger(PushlogManager.class);
+  private static final Logger logger = LoggerFactory.getLogger(PushlogManager.class);
 
-    private static final Object LOCK_STORE = new Object();
-    private static final Object LOCK_GET = new Object();
+  private static final Object LOCK_STORE = new Object();
+  private static final Object LOCK_GET = new Object();
 
-    private Map<String, Lock> locks = Maps.newHashMap();
-    private DataStoreFactory dataStoreFactory;
+  private final Map<String, Lock> locks = Maps.newHashMap();
+  private final DataStoreFactory dataStoreFactory;
+
+  @Inject
+  public PushlogManager(DataStoreFactory dataStoreFactory) {
+    this.dataStoreFactory = dataStoreFactory;
+  }
 
 
-    @Inject
-    public PushlogManager(DataStoreFactory dataStoreFactory) {
-        this.dataStoreFactory = dataStoreFactory;
+  public void store(Pushlog pushlog, Repository repository) {
+    synchronized (LOCK_STORE) {
+      try {
+        logger.debug("store pushlog for repository {}",
+          pushlog.getRepositoryId());
+        getDatastore(repository).put(pushlog.getRepositoryId(), pushlog);
+      } finally {
+        logger.trace("unlock repository {}", pushlog.getRepositoryId());
+        getLock(pushlog.getRepositoryId()).unlock();
+      }
+    }
+  }
+
+  public Pushlog get(Repository repository) {
+    Pushlog pushlog = getDatastore(repository).get(repository.getId());
+
+    if (pushlog == null) {
+      pushlog = new Pushlog(repository.getId());
     }
 
+    return pushlog;
+  }
 
-    public void store(Pushlog pushlog, Repository repository) {
-        synchronized (LOCK_STORE) {
-            try {
-                logger.debug("store pushlog for repository {}",
-                        pushlog.getRepositoryId());
-                getDatastore(repository).put(pushlog.getRepositoryId(), pushlog);
-            } finally {
-                logger.trace("unlock repository {}", pushlog.getRepositoryId());
-                getLock(pushlog.getRepositoryId()).unlock();
-            }
-        }
+  private DataStore<Pushlog> getDatastore(Repository repository) {
+    return dataStoreFactory.withType(Pushlog.class).withName(NAME).forRepository(repository).build();
+  }
+
+
+  public Pushlog getAndLock(Repository repository) {
+    synchronized (LOCK_GET) {
+      getLock(repository.getId()).lock();
+
+      logger.trace("lock pushlog for repository {}", repository.getId());
+
+      return get(repository);
+    }
+  }
+
+  private Lock getLock(String id) {
+    Lock lock = locks.get(id);
+
+    if (lock == null) {
+      lock = new ReentrantLock();
+      locks.put(id, lock);
     }
 
-    public Pushlog get(Repository repository) {
-        Pushlog pushlog = getDatastore(repository).get(repository.getId());
-
-        if (pushlog == null) {
-            pushlog = new Pushlog(repository.getId());
-        }
-
-        return pushlog;
-    }
-
-    private DataStore<Pushlog> getDatastore(Repository repository) {
-        return dataStoreFactory.withType(Pushlog.class).withName(NAME).forRepository(repository).build();
-    }
-
-
-    public Pushlog getAndLock(Repository repository) {
-        synchronized (LOCK_GET) {
-            getLock(repository.getId()).lock();
-
-            logger.trace("lock pushlog for repository {}", repository.getId());
-
-            return get(repository);
-        }
-    }
-
-    private Lock getLock(String id) {
-        Lock lock = locks.get(id);
-
-        if (lock == null) {
-            lock = new ReentrantLock();
-            locks.put(id, lock);
-        }
-
-        return lock;
-    }
+    return lock;
+  }
 
 
 }
