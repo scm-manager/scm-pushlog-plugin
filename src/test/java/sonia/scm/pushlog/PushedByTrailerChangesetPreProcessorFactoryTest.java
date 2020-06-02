@@ -29,22 +29,22 @@ import org.mockito.Answers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import sonia.scm.api.v2.resources.TrailerPersonDto;
 import sonia.scm.repository.Changeset;
 import sonia.scm.repository.Repository;
 import sonia.scm.repository.RepositoryTestData;
+import sonia.scm.repository.Trailer;
 import sonia.scm.user.DisplayUser;
 import sonia.scm.user.User;
 import sonia.scm.user.UserDisplayManager;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class PushedByChangesetTrailerTest {
+class PushedByTrailerChangesetPreProcessorFactoryTest {
 
   private static final Repository REPOSITORY = RepositoryTestData.createHeartOfGold();
 
@@ -55,7 +55,7 @@ class PushedByChangesetTrailerTest {
   private PushlogManager pushlogManager;
 
   @InjectMocks
-  private PushedByChangesetTrailer changesetTrailer;
+  private PushedByTrailerChangesetPreProcessorFactory changesetTrailer;
 
   @Test
   void shouldReturnEmptyList() {
@@ -63,7 +63,8 @@ class PushedByChangesetTrailerTest {
 
     Changeset changeset = new Changeset();
     changeset.setId("1");
-    List<TrailerPersonDto> trailers = changesetTrailer.getTrailers(REPOSITORY, changeset);
+    changesetTrailer.createPreProcessor(REPOSITORY).process(changeset);
+    Collection<Trailer> trailers = changeset.getTrailers();
 
     assertThat(trailers).isEmpty();
   }
@@ -78,12 +79,13 @@ class PushedByChangesetTrailerTest {
 
     Changeset changeset = new Changeset();
     changeset.setId("1");
-    List<TrailerPersonDto> trailers = changesetTrailer.getTrailers(REPOSITORY, changeset);
+    changesetTrailer.createPreProcessor(REPOSITORY).process(changeset);
+    Collection<Trailer> trailers = changeset.getTrailers();
 
-    TrailerPersonDto trailerPersonDto = trailers.get(0);
-    assertThat(trailerPersonDto.getTrailerType()).isEqualTo("Pushed-by");
-    assertThat(trailerPersonDto.getName()).isEqualTo(pusherDisplayName);
-    assertThat(trailerPersonDto.getMail()).isEqualTo(pusherMail);
+    Trailer trailer = trailers.iterator().next();
+    assertThat(trailer.getTrailerType()).isEqualTo("Pushed-by");
+    assertThat(trailer.getPerson().getName()).isEqualTo(pusherDisplayName);
+    assertThat(trailer.getPerson().getMail()).isEqualTo(pusherMail);
   }
 
   @Test
@@ -94,12 +96,13 @@ class PushedByChangesetTrailerTest {
 
     Changeset changeset = new Changeset();
     changeset.setId("1");
-    List<TrailerPersonDto> trailers = changesetTrailer.getTrailers(REPOSITORY, changeset);
+    changesetTrailer.createPreProcessor(REPOSITORY).process(changeset);
+    Collection<Trailer> trailers = changeset.getTrailers();
 
-    TrailerPersonDto trailerPersonDto = trailers.get(0);
-    assertThat(trailerPersonDto.getTrailerType()).isEqualTo("Pushed-by");
-    assertThat(trailerPersonDto.getName()).isEqualTo(pusherName);
-    assertThat(trailerPersonDto.getMail()).isNull();
+    Trailer trailer = trailers.iterator().next();
+    assertThat(trailer.getTrailerType()).isEqualTo("Pushed-by");
+    assertThat(trailer.getPerson().getName()).isEqualTo(pusherName);
+    assertThat(trailer.getPerson().getMail()).isNull();
   }
 
 }

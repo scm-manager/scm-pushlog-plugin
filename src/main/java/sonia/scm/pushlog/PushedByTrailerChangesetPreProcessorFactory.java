@@ -24,11 +24,12 @@
 package sonia.scm.pushlog;
 
 import com.google.common.base.Strings;
-import sonia.scm.api.v2.resources.TrailerPersonDto;
 import sonia.scm.plugin.Extension;
-import sonia.scm.repository.Changeset;
-import sonia.scm.repository.ChangesetTrailers;
+import sonia.scm.repository.ChangesetPreProcessor;
+import sonia.scm.repository.ChangesetPreProcessorFactory;
+import sonia.scm.repository.Person;
 import sonia.scm.repository.Repository;
+import sonia.scm.repository.Trailer;
 import sonia.scm.user.DisplayUser;
 import sonia.scm.user.UserDisplayManager;
 
@@ -38,7 +39,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Extension
-public class PushedByChangesetTrailer implements ChangesetTrailers {
+public class PushedByTrailerChangesetPreProcessorFactory implements ChangesetPreProcessorFactory {
 
   private static final String TRAILER_TYPE = "Pushed-by";
 
@@ -46,35 +47,34 @@ public class PushedByChangesetTrailer implements ChangesetTrailers {
   private final UserDisplayManager userDisplayManager;
 
   @Inject
-  public PushedByChangesetTrailer(PushlogManager pushlogManager, UserDisplayManager userDisplayManager) {
+  public PushedByTrailerChangesetPreProcessorFactory(PushlogManager pushlogManager, UserDisplayManager userDisplayManager) {
     this.pushlogManager = pushlogManager;
     this.userDisplayManager = userDisplayManager;
   }
 
-  public List<TrailerPersonDto> getTrailers(Repository repository, Changeset changeset) {
-    List<TrailerPersonDto> pushers = new ArrayList<>();
-    String pusherName = pushlogManager.get(repository).get(changeset.getId());
+  @Override
+  public ChangesetPreProcessor createPreProcessor(Repository repository) {
+    return changeset -> {
+      List<Trailer> pushers = new ArrayList<>();
+      String pusherName = pushlogManager.get(repository).get(changeset.getId());
 
-    if (!Strings.isNullOrEmpty(pusherName)) {
-      TrailerPersonDto trailerPersonDto = createTrailerPersonDto(pusherName);
-      pushers.add(trailerPersonDto);
-    }
+      if (!Strings.isNullOrEmpty(pusherName)) {
+        Trailer trailerPersonDto = createTrailerPersonDto(pusherName);
+        pushers.add(trailerPersonDto);
+      }
 
-    return pushers;
+      changeset.addTrailers(pushers);
+    };
   }
 
-  private TrailerPersonDto createTrailerPersonDto(String pusherName) {
-    TrailerPersonDto trailerPersonDto = new TrailerPersonDto();
-    trailerPersonDto.setTrailerType(TRAILER_TYPE);
+  private Trailer createTrailerPersonDto(String pusherName) {
 
     Optional<DisplayUser> optionalDisplayUser = userDisplayManager.get(pusherName);
     if (optionalDisplayUser.isPresent()) {
       DisplayUser displayUser = optionalDisplayUser.get();
-      trailerPersonDto.setName(displayUser.getDisplayName());
-      trailerPersonDto.setMail(displayUser.getMail());
+      return new Trailer(TRAILER_TYPE, new Person(displayUser.getDisplayName(), displayUser.getMail()));
     } else {
-      trailerPersonDto.setName(pusherName);
+      return new Trailer(TRAILER_TYPE, new Person(pusherName));
     }
-    return trailerPersonDto;
   }
 }
