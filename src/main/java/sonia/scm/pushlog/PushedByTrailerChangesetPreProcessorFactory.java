@@ -34,8 +34,6 @@ import sonia.scm.user.DisplayUser;
 import sonia.scm.user.UserDisplayManager;
 
 import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 
 @Extension
@@ -55,19 +53,16 @@ public class PushedByTrailerChangesetPreProcessorFactory implements ChangesetPre
   @Override
   public ChangesetPreProcessor createPreProcessor(Repository repository) {
     return changeset -> {
-      List<Trailer> pushers = new ArrayList<>();
       String pusherName = pushlogManager.get(repository).get(changeset.getId());
 
       if (!Strings.isNullOrEmpty(pusherName)) {
-        Trailer trailerPersonDto = createTrailerPersonDto(pusherName);
-        pushers.add(trailerPersonDto);
+        Trailer trailer = createTrailer(pusherName);
+        changeset.addTrailer(trailer);
       }
-
-      changeset.addTrailers(pushers);
     };
   }
 
-  private Trailer createTrailerPersonDto(String pusherName) {
+  private Trailer createTrailer(String pusherName) {
 
     Optional<DisplayUser> optionalDisplayUser = userDisplayManager.get(pusherName);
     if (optionalDisplayUser.isPresent()) {

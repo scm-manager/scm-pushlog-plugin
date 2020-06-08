@@ -66,7 +66,7 @@ class PushedByTrailerChangesetPreProcessorFactoryTest {
     changesetTrailer.createPreProcessor(REPOSITORY).process(changeset);
     Collection<Trailer> trailers = changeset.getTrailers();
 
-    assertThat(trailers).isEmpty();
+    assertThat(trailers).isNullOrEmpty();
   }
 
   @Test
