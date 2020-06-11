@@ -30,9 +30,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import sonia.scm.repository.Changeset;
+import sonia.scm.repository.Contributor;
 import sonia.scm.repository.Repository;
 import sonia.scm.repository.RepositoryTestData;
-import sonia.scm.repository.Trailer;
 import sonia.scm.user.DisplayUser;
 import sonia.scm.user.User;
 import sonia.scm.user.UserDisplayManager;
@@ -44,7 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class PushedByTrailerChangesetPreProcessorFactoryTest {
+class PushedByContributorChangesetPreProcessorFactoryTest {
 
   private static final Repository REPOSITORY = RepositoryTestData.createHeartOfGold();
 
@@ -55,7 +55,7 @@ class PushedByTrailerChangesetPreProcessorFactoryTest {
   private PushlogManager pushlogManager;
 
   @InjectMocks
-  private PushedByTrailerChangesetPreProcessorFactory changesetTrailer;
+  private PushedByContributorChangesetPreProcessorFactory contributorProcessor;
 
   @Test
   void shouldReturnEmptyList() {
@@ -63,10 +63,10 @@ class PushedByTrailerChangesetPreProcessorFactoryTest {
 
     Changeset changeset = new Changeset();
     changeset.setId("1");
-    changesetTrailer.createPreProcessor(REPOSITORY).process(changeset);
-    Collection<Trailer> trailers = changeset.getTrailers();
+    contributorProcessor.createPreProcessor(REPOSITORY).process(changeset);
+    Collection<Contributor> contributors = changeset.getContributors();
 
-    assertThat(trailers).isNullOrEmpty();
+    assertThat(contributors).isNullOrEmpty();
   }
 
   @Test
@@ -79,13 +79,13 @@ class PushedByTrailerChangesetPreProcessorFactoryTest {
 
     Changeset changeset = new Changeset();
     changeset.setId("1");
-    changesetTrailer.createPreProcessor(REPOSITORY).process(changeset);
-    Collection<Trailer> trailers = changeset.getTrailers();
+    contributorProcessor.createPreProcessor(REPOSITORY).process(changeset);
+    Collection<Contributor> contributors = changeset.getContributors();
 
-    Trailer trailer = trailers.iterator().next();
-    assertThat(trailer.getTrailerType()).isEqualTo("Pushed-by");
-    assertThat(trailer.getPerson().getName()).isEqualTo(pusherDisplayName);
-    assertThat(trailer.getPerson().getMail()).isEqualTo(pusherMail);
+    Contributor contributor = contributors.iterator().next();
+    assertThat(contributor.getType()).isEqualTo("Pushed-by");
+    assertThat(contributor.getPerson().getName()).isEqualTo(pusherDisplayName);
+    assertThat(contributor.getPerson().getMail()).isEqualTo(pusherMail);
   }
 
   @Test
@@ -96,13 +96,13 @@ class PushedByTrailerChangesetPreProcessorFactoryTest {
 
     Changeset changeset = new Changeset();
     changeset.setId("1");
-    changesetTrailer.createPreProcessor(REPOSITORY).process(changeset);
-    Collection<Trailer> trailers = changeset.getTrailers();
+    contributorProcessor.createPreProcessor(REPOSITORY).process(changeset);
+    Collection<Contributor> contributors = changeset.getContributors();
 
-    Trailer trailer = trailers.iterator().next();
-    assertThat(trailer.getTrailerType()).isEqualTo("Pushed-by");
-    assertThat(trailer.getPerson().getName()).isEqualTo(pusherName);
-    assertThat(trailer.getPerson().getMail()).isNull();
+    Contributor contributor = contributors.iterator().next();
+    assertThat(contributor.getType()).isEqualTo("Pushed-by");
+    assertThat(contributor.getPerson().getName()).isEqualTo(pusherName);
+    assertThat(contributor.getPerson().getMail()).isNull();
   }
 
 }

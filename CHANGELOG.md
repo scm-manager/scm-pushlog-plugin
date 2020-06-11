@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Changed
-- Set "Pushed-by" Trailer to Changset using the new ChangesetTrailers API ([#3](https://github.com/scm-manager/scm-pushlog-plugin/pull/3)) 
+- Add "Pushed-by" as contributor to changset ([#3](https://github.com/scm-manager/scm-pushlog-plugin/pull/3)) 
 
 ## 2.0.0 - 2020-06-04
 ### Changed
