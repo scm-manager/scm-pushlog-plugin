@@ -42,78 +42,75 @@ import sonia.scm.repository.RepositoryHookEvent;
 import sonia.scm.security.Role;
 
 /**
- *
  * @author Sebastian Sdorra
  */
 @Extension
 @EagerSingleton
 public class PushlogHook {
 
-
-    private static final Logger logger =
-            LoggerFactory.getLogger(PushlogHook.class);
-    private PushlogManager pushlogManager;
+  private static final Logger logger = LoggerFactory.getLogger(PushlogHook.class);
+  private PushlogManager pushlogManager;
 
 
-    @Inject
-    public PushlogHook(PushlogManager pushlogManager) {
-        this.pushlogManager = pushlogManager;
+  @Inject
+  public PushlogHook(PushlogManager pushlogManager) {
+    this.pushlogManager = pushlogManager;
+  }
+
+
+  @Subscribe
+  public void onEvent(PostReceiveRepositoryHookEvent event) {
+    Subject subject = SecurityUtils.getSubject();
+
+    if (subject.hasRole(Role.USER)) {
+      String username = (String) subject.getPrincipal();
+
+      if (!Strings.isNullOrEmpty(username)) {
+        handlePushEvent(username, event);
+      } else {
+        logger.warn("username is null or empty");
+      }
+    } else {
+      logger.warn("subject has no user role, skip pushlog");
     }
+  }
 
 
-    @Subscribe
-    public void onEvent(PostReceiveRepositoryHookEvent event) {
-        Subject subject = SecurityUtils.getSubject();
+  private void handlePush(String username, Repository repository,
+                          Iterable<Changeset> changesets) {
+    Pushlog pushlog = null;
 
-        if (subject.hasRole(Role.USER)) {
-            String username = (String) subject.getPrincipal();
+    try {
+      pushlog = pushlogManager.getAndLock(repository);
 
-            if (!Strings.isNullOrEmpty(username)) {
-                handlePushEvent(username, event);
-            } else {
-                logger.warn("username is null or empty");
-            }
-        } else {
-            logger.warn("subject has no user role, skip pushlog");
-        }
+      PushlogEntry entry = pushlog.createEntry(username);
+
+      for (Changeset c : changesets) {
+        entry.add(c.getId());
+      }
+
+    } finally {
+      if (pushlog != null) {
+        pushlogManager.store(pushlog, repository);
+      }
     }
+  }
 
 
-    private void handlePush(String username, Repository repository,
-                            Iterable<Changeset> changesets) {
-        Pushlog pushlog = null;
+  private void handlePushEvent(String username, RepositoryHookEvent event) {
+    Repository repository = event.getRepository();
 
-        try {
-            pushlog = pushlogManager.getAndLock(repository);
+    if (repository != null) {
+      Iterable<Changeset> changesets = event.getContext().getChangesetProvider().getChangesets();
 
-            PushlogEntry entry = pushlog.createEntry(username);
-
-            for (Changeset c : changesets) {
-                entry.add(c.getId());
-            }
-
-        } finally {
-            if (pushlog != null) {
-                pushlogManager.store(pushlog, repository);
-            }
-        }
+      if (!Iterables.isEmpty(changesets)) {
+        handlePush(username, repository, changesets);
+      } else {
+        logger.warn("received hook without changesets");
+      }
+    } else {
+      logger.warn("received hook without repository");
     }
-
-
-    private void handlePushEvent(String username, RepositoryHookEvent event) {
-        Repository repository = event.getRepository();
-
-        if (repository != null) {
-            Iterable<Changeset> changesets = event.getContext().getChangesetProvider().getChangesets();
-
-            if (!Iterables.isEmpty(changesets)) {
-                handlePush(username, repository, changesets);
-            } else {
-                logger.warn("received hook without changesets");
-            }
-        } else {
-            logger.warn("received hook without repository");
-        }
-    }
+  }
 
 }

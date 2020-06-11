@@ -1,5 +1,9 @@
 {
-  "scm-pushlog-plugin": {
-    "pushedBy": "pushed by"
+  "changeset": {
+    "contributor": {
+      "type": {
+        "Pushed-by": "Pushed by"
+      }
+    }
   }
 }
