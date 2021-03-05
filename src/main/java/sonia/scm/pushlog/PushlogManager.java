@@ -63,7 +63,7 @@ public class PushlogManager {
       try {
         logger.debug("store pushlog for repository {}",
           pushlog.getRepositoryId());
-        getDatastore(repository).put(pushlog.getRepositoryId(), pushlog);
+        getDatastore(repository).put(NAME, pushlog);
       } finally {
         logger.trace("unlock repository {}", pushlog.getRepositoryId());
         getLock(pushlog.getRepositoryId()).unlock();
@@ -72,7 +72,7 @@ public class PushlogManager {
   }
 
   public Pushlog get(Repository repository) {
-    Pushlog pushlog = getDatastore(repository).get(repository.getId());
+    Pushlog pushlog = getDatastore(repository).get(NAME);
 
     if (pushlog == null) {
       pushlog = new Pushlog(repository.getId());
