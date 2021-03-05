@@ -85,7 +85,7 @@ class RemoveRepositoryIdFromStoreUpdateStepTest {
   }
 
   @Test
-  void shouldNotFailForRepositoryWithoutStatistics() {
+  void shouldNotFailForRepositoryWithoutPushlog() {
     when(store.getOptional(REPOSITORY_ID)).thenReturn(empty());
 
     updateStep.doUpdate();
