@@ -49,8 +49,8 @@ import sonia.scm.security.Role;
 public class PushlogHook {
 
   private static final Logger logger = LoggerFactory.getLogger(PushlogHook.class);
-  private PushlogManager pushlogManager;
 
+  private final PushlogManager pushlogManager;
 
   @Inject
   public PushlogHook(PushlogManager pushlogManager) {
@@ -86,7 +86,12 @@ public class PushlogHook {
       PushlogEntry entry = pushlog.createEntry(username);
 
       for (Changeset c : changesets) {
-        entry.add(c.getId());
+        if (pushlog.get(c.getId()) != null) {
+          logger.warn("found changeset with existing log entry (id {} in {}); skipping further analysis for this push", c.getId(), repository);
+          break;
+        } else {
+          entry.add(c.getId());
+        }
       }
 
     } finally {
@@ -106,7 +111,7 @@ public class PushlogHook {
       if (!Iterables.isEmpty(changesets)) {
         handlePush(username, repository, changesets);
       } else {
-        logger.warn("received hook without changesets");
+        logger.info("received hook without changesets");
       }
     } else {
       logger.warn("received hook without repository");

@@ -26,16 +26,12 @@ package sonia.scm.pushlog;
 
 //~--- non-JDK imports --------------------------------------------------------
 
-import com.google.common.collect.Lists;
-
-//~--- JDK imports ------------------------------------------------------------
-
-import java.util.List;
-
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  *
@@ -122,11 +118,11 @@ public class PushlogEntry
    *
    * @return
    */
-  private List<String> getChangesets()
+  private Set<String> getChangesets()
   {
     if (changesets == null)
     {
-      changesets = Lists.newArrayList();
+      changesets = new LinkedHashSet<>();
     }
 
     return changesets;
@@ -136,7 +132,7 @@ public class PushlogEntry
 
   /** Field description */
   @XmlElement(name = "changeset")
-  private List<String> changesets;
+  private Set<String> changesets;
 
   /** Field description */
   private long id;
