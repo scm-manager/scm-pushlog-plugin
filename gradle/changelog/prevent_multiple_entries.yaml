@@ -1,2 +1,0 @@
-- type: fixed
-  description: Prevent writing multiple log entries ([#7](https://github.com/scm-manager/scm-pushlog-plugin/pull/7))
