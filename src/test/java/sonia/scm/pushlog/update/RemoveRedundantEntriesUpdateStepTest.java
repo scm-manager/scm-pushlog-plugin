@@ -32,7 +32,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import sonia.scm.pushlog.Pushlog;
 import sonia.scm.pushlog.PushlogEntry;
 import sonia.scm.store.DataStore;
-import sonia.scm.store.InMemoryByteDataStoreFactory;
+import sonia.scm.store.DataStoreFactory;
+import sonia.scm.store.InMemoryDataStore;
+import sonia.scm.store.InMemoryDataStoreFactory;
 import sonia.scm.update.RepositoryUpdateIterator;
 
 import java.util.function.Consumer;
@@ -47,7 +49,7 @@ class RemoveRedundantEntriesUpdateStepTest {
   @Mock
   private RepositoryUpdateIterator repositoryUpdateIterator;
 
-  private final InMemoryByteDataStoreFactory dataStoreFactory = new InMemoryByteDataStoreFactory();
+  private final DataStoreFactory dataStoreFactory = new InMemoryDataStoreFactory(new InMemoryDataStore<Pushlog>());
 
   private RemoveRedundantEntriesUpdateStep updateStep;
 
