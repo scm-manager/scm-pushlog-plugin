@@ -48,41 +48,8 @@ import javax.xml.bind.annotation.XmlRootElement;
 public class Pushlog implements Serializable
 {
 
-  /** Field description */
-  private static final int DATA_VERSION = 1;
-
-  /** Field description */
   private static final long serialVersionUID = 6674106880546613670L;
 
-  //~--- constructors ---------------------------------------------------------
-
-  /**
-   * Constructs ...
-   *
-   */
-  public Pushlog() {}
-
-  /**
-   * Constructs ...
-   *
-   *
-   * @param repositoryId
-   */
-  public Pushlog(String repositoryId)
-  {
-    this.repositoryId = repositoryId;
-  }
-
-  //~--- methods --------------------------------------------------------------
-
-  /**
-   * Method description
-   *
-   *
-   * @param username
-   *
-   * @return
-   */
   public PushlogEntry createEntry(String username)
   {
     PushlogEntry entry = new PushlogEntry(++lastEntryId, username);
@@ -92,16 +59,6 @@ public class Pushlog implements Serializable
     return entry;
   }
 
-  //~--- get methods ----------------------------------------------------------
-
-  /**
-   * Method description
-   *
-   *
-   * @param id
-   *
-   * @return
-   */
   public String get(String id)
   {
     String username = null;
@@ -119,23 +76,6 @@ public class Pushlog implements Serializable
     return username;
   }
 
-  /**
-   * Method description
-   *
-   *
-   * @return
-   */
-  public int getDataVersion()
-  {
-    return dataVersion;
-  }
-
-  /**
-   * Method description
-   *
-   *
-   * @return
-   */
   public List<PushlogEntry> getEntries()
   {
     if (entries == null)
@@ -146,14 +86,6 @@ public class Pushlog implements Serializable
     return entries;
   }
 
-  /**
-   * Method description
-   *
-   *
-   * @param id
-   *
-   * @return
-   */
   public PushlogEntry getEntry(long id)
   {
     PushlogEntry entry = null;
@@ -167,36 +99,12 @@ public class Pushlog implements Serializable
         break;
       }
     }
-
     return entry;
   }
 
-  /**
-   * Method description
-   *
-   *
-   * @return
-   */
-  public String getRepositoryId()
-  {
-    return repositoryId;
-  }
-
-  //~--- fields ---------------------------------------------------------------
-
-  /** Field description */
-  @XmlElement(name = "data-version")
-  private int dataVersion = DATA_VERSION;
-
-  /** Field description */
   @XmlElement(name = "entry")
   private List<PushlogEntry> entries;
 
-  /** Field description */
   @XmlElement(name = "last-entry-id")
   private long lastEntryId = 0;
-
-  /** Field description */
-  @XmlElement(name = "repository-id")
-  private String repositoryId;
 }
