@@ -23,7 +23,6 @@
  */
 package sonia.scm.pushlog;
 
-import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.slf4j.Logger;
@@ -32,6 +31,7 @@ import sonia.scm.repository.Repository;
 import sonia.scm.store.DataStore;
 import sonia.scm.store.DataStoreFactory;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -49,7 +49,7 @@ public class PushlogManager {
   private static final Object LOCK_STORE = new Object();
   private static final Object LOCK_GET = new Object();
 
-  private final Map<String, Lock> locks = Maps.newHashMap();
+  private final Map<String, Lock> locks = new HashMap<>();
   private final DataStoreFactory dataStoreFactory;
 
   @Inject
@@ -61,12 +61,11 @@ public class PushlogManager {
   public void store(Pushlog pushlog, Repository repository) {
     synchronized (LOCK_STORE) {
       try {
-        logger.debug("store pushlog for repository {}",
-          pushlog.getRepositoryId());
+        logger.debug("store pushlog for repository {}", repository);
         getDatastore(repository).put(NAME, pushlog);
       } finally {
-        logger.trace("unlock repository {}", pushlog.getRepositoryId());
-        getLock(pushlog.getRepositoryId()).unlock();
+        logger.trace("unlock repository {}", repository);
+        getLock(repository.getId()).unlock();
       }
     }
   }
@@ -75,7 +74,7 @@ public class PushlogManager {
     Pushlog pushlog = getDatastore(repository).get(NAME);
 
     if (pushlog == null) {
-      pushlog = new Pushlog(repository.getId());
+      pushlog = new Pushlog();
     }
 
     return pushlog;
@@ -90,7 +89,7 @@ public class PushlogManager {
     synchronized (LOCK_GET) {
       getLock(repository.getId()).lock();
 
-      logger.trace("lock pushlog for repository {}", repository.getId());
+      logger.trace("lock pushlog for repository {}", repository);
 
       return get(repository);
     }

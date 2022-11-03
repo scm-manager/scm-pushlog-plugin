@@ -67,18 +67,18 @@ public class RemoveRedundantEntriesUpdateStep implements UpdateStep {
       .forRepository(repositoryId)
       .build();
     store.getOptional(PUSHLOG_STORE_NAME)
-      .ifPresent(pushlog -> optimize(store, pushlog));
+      .ifPresent(pushlog -> optimize(store, repositoryId, pushlog));
   }
 
-  private void optimize(DataStore<Pushlog> store, Pushlog pushlog) {
-    if (optimize(pushlog)) {
-      log.info("found illegal multiple pushlog entries for repository {}; cleaning up", pushlog.getRepositoryId());
+  private void optimize(DataStore<Pushlog> store, String repositoryId, Pushlog pushlog) {
+    if (optimize(repositoryId, pushlog)) {
+      log.info("found illegal multiple pushlog entries for repository {}; cleaning up", repositoryId);
       store.put(PUSHLOG_STORE_NAME, pushlog);
     }
   }
 
   @SuppressWarnings({"java:S3011", "unchecked"}) // reflection is used only for this update step and there should be acceptable
-  private boolean optimize(Pushlog pushlog) {
+  private boolean optimize(String repositoryId, Pushlog pushlog) {
     Set<String> foundChangesets = new HashSet<>();
     boolean errorsFound = false;
     for (Iterator<PushlogEntry> entryIterator = pushlog.getEntries().iterator(); entryIterator.hasNext(); ) {
@@ -94,7 +94,7 @@ public class RemoveRedundantEntriesUpdateStep implements UpdateStep {
           }
         }
       } catch (Exception e) {
-        log.warn("could not clean up pushlog for repository {}", pushlog.getRepositoryId(), e);
+        log.warn("could not clean up pushlog for repository {}", repositoryId, e);
         return false;
       }
     }
