@@ -1,0 +1,2 @@
+- type: fixed
+  description: Block of event bus ([#8](https://github.com/scm-manager/scm-pushlog-plugin/pull/8))
