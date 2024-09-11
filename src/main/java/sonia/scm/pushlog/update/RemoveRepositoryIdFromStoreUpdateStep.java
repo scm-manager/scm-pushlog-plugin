@@ -24,7 +24,7 @@ import sonia.scm.store.DataStoreFactory;
 import sonia.scm.update.RepositoryUpdateIterator;
 import sonia.scm.version.Version;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 @Extension
 public class RemoveRepositoryIdFromStoreUpdateStep implements UpdateStep {

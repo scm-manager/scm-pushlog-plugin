@@ -26,7 +26,7 @@ import sonia.scm.store.DataStoreFactory;
 import sonia.scm.update.RepositoryUpdateIterator;
 import sonia.scm.version.Version;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.lang.reflect.Field;
 import java.util.HashSet;
 import java.util.Iterator;
