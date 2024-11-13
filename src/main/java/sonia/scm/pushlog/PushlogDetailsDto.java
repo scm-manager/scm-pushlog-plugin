@@ -14,15 +14,21 @@
  * along with this program. If not, see https://www.gnu.org/licenses/.
  */
 
-plugins {
-  id 'org.scm-manager.smp' version '0.18.0'
-}
+package sonia.scm.pushlog;
 
-scmPlugin {
-  scmVersion = "3.5.1-SNAPSHOT"
-  displayName = "Pushlog"
-  description = "Tracks who pushed what to a repository"
-  author = "Cloudogu GmbH"
-  category = "Administration"
+import de.otto.edison.hal.HalRepresentation;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import sonia.scm.repository.Person;
+
+import java.time.Instant;
+
+@Getter
+@Setter
+@EqualsAndHashCode(callSuper = true)
+public class PushlogDetailsDto extends HalRepresentation {
+  private Person person;
+  private Instant publishedTime;
 
 }

@@ -16,119 +16,49 @@
 
 package sonia.scm.pushlog;
 
-//~--- non-JDK imports --------------------------------------------------------
-
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-/**
- *
- * @author Sebastian Sdorra
- */
+@Getter
+@Setter
 @XmlRootElement(name = "push")
 @XmlAccessorType(XmlAccessType.FIELD)
-public class PushlogEntry
-{
+public class PushlogEntry {
 
-  /**
-   * Constructs ...
-   *
-   */
-  public PushlogEntry() {}
+  @XmlElement(name = "changeset")
+  private Set<String> changesets;
+  private long id;
+  private String username;
+  private Long contributionTime;
 
-  /**
-   * Constructs ...
-   *
-   *
-   *
-   * @param id
-   * @param username
-   */
-  public PushlogEntry(long id, String username)
-  {
-    this.id = id;
-    this.username = username;
+  public PushlogEntry() {
   }
 
-  //~--- methods --------------------------------------------------------------
+  public PushlogEntry(long id, String username, long contributionTime) {
+    this.id = id;
+    this.username = username;
+    this.contributionTime = contributionTime;
+  }
 
-  /**
-   * Method description
-   *
-   *
-   * @param id
-   */
-  public void add(String id)
-  {
+  public void add(String id) {
     getChangesets().add(id);
   }
 
-  /**
-   * Method description
-   *
-   *
-   * @param id
-   *
-   * @return
-   */
-  public boolean contains(String id)
-  {
+  public boolean contains(String id) {
     return getChangesets().contains(id);
   }
 
-  //~--- get methods ----------------------------------------------------------
-
-  /**
-   * Method description
-   *
-   *
-   * @return
-   */
-  public long getId()
-  {
-    return id;
-  }
-
-  /**
-   * Method description
-   *
-   *
-   * @return
-   */
-  public String getUsername()
-  {
-    return username;
-  }
-
-  /**
-   * Method description
-   *
-   *
-   * @return
-   */
-  private Set<String> getChangesets()
-  {
-    if (changesets == null)
-    {
+  private Set<String> getChangesets() {
+    if (changesets == null) {
       changesets = new LinkedHashSet<>();
     }
-
     return changesets;
   }
-
-  //~--- fields ---------------------------------------------------------------
-
-  /** Field description */
-  @XmlElement(name = "changeset")
-  private Set<String> changesets;
-
-  /** Field description */
-  private long id;
-
-  /** Field description */
-  private String username;
 }

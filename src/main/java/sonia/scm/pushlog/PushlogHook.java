@@ -79,7 +79,7 @@ public class PushlogHook {
       PushlogEntry entry = pushlog.createEntry(username);
 
       for (Changeset c : changesets) {
-        if (pushlog.get(c.getId()) != null) {
+        if (pushlog.get(c.getId()).isPresent()) {
           logger.warn("found changeset with existing log entry (id {} in {}); skipping further analysis for this push", c.getId(), repository);
           break;
         } else {

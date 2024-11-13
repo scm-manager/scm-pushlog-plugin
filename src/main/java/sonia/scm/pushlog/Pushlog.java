@@ -16,76 +16,53 @@
 
 package sonia.scm.pushlog;
 
-//~--- non-JDK imports --------------------------------------------------------
-
 import com.google.common.collect.Lists;
-
-//~--- JDK imports ------------------------------------------------------------
-
-import java.io.Serializable;
-
-import java.util.List;
-
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 
-/**
- *
- * @author Sebastian Sdorra
- */
+import java.io.Serializable;
+import java.util.List;
+import java.util.Optional;
+
+
 @XmlRootElement(name = "pushlog")
 @XmlAccessorType(XmlAccessType.FIELD)
-public class Pushlog implements Serializable
-{
+public class Pushlog implements Serializable {
 
   private static final long serialVersionUID = 6674106880546613670L;
 
-  public PushlogEntry createEntry(String username)
-  {
-    PushlogEntry entry = new PushlogEntry(++lastEntryId, username);
+  public PushlogEntry createEntry(String username) {
+    PushlogEntry entry = new PushlogEntry(++lastEntryId, username, System.currentTimeMillis());
 
     getEntries().add(entry);
 
     return entry;
   }
 
-  public String get(String id)
-  {
-    String username = null;
-
-    for (PushlogEntry entry : getEntries())
-    {
-      if (entry.contains(id))
-      {
-        username = entry.getUsername();
-
-        break;
+  public Optional<PushlogEntry> get(String id) {
+    for (PushlogEntry entry : getEntries()) {
+      if (entry.contains(id)) {
+        return Optional.of(entry);
       }
     }
-
-    return username;
+    return Optional.empty();
   }
 
-  public List<PushlogEntry> getEntries()
-  {
-    if (entries == null)
-    {
+  public List<PushlogEntry> getEntries() {
+    if (entries == null) {
       entries = Lists.newArrayList();
     }
 
     return entries;
   }
 
-  public PushlogEntry getEntry(long id)
-  {
+  public PushlogEntry getEntry(long id) {
     PushlogEntry entry = null;
 
-    for (PushlogEntry e : getEntries())
-    {
-      if (e.getId() == id)
-      {
+    for (PushlogEntry e : getEntries()) {
+      if (e.getId() == id) {
         entry = e;
 
         break;

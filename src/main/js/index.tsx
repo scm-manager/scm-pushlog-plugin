@@ -14,15 +14,9 @@
  * along with this program. If not, see https://www.gnu.org/licenses/.
  */
 
-plugins {
-  id 'org.scm-manager.smp' version '0.18.0'
-}
+import { binder } from "@scm-manager/ui-extensions";
+import PushlogDetails from "./PushlogDetails";
 
-scmPlugin {
-  scmVersion = "3.5.1-SNAPSHOT"
-  displayName = "Pushlog"
-  description = "Tracks who pushed what to a repository"
-  author = "Cloudogu GmbH"
-  category = "Administration"
-
-}
+binder.bind("changesets.contributor.table.row", PushlogDetails, {
+  predicate: (props) => !!props.changeset._embedded.pushlogDetails,
+});
