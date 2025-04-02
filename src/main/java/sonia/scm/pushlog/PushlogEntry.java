@@ -16,49 +16,21 @@
 
 package sonia.scm.pushlog;
 
-import jakarta.xml.bind.annotation.XmlAccessType;
-import jakarta.xml.bind.annotation.XmlAccessorType;
-import jakarta.xml.bind.annotation.XmlElement;
-import jakarta.xml.bind.annotation.XmlRootElement;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import sonia.scm.repository.Repository;
+import sonia.scm.store.QueryableType;
 
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.time.Instant;
 
-@Getter
-@Setter
-@XmlRootElement(name = "push")
-@XmlAccessorType(XmlAccessType.FIELD)
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@QueryableType(Repository.class)
 public class PushlogEntry {
 
-  @XmlElement(name = "changeset")
-  private Set<String> changesets;
-  private long id;
+  private String pushlogId;
   private String username;
-  private Long contributionTime;
-
-  public PushlogEntry() {
-  }
-
-  public PushlogEntry(long id, String username, long contributionTime) {
-    this.id = id;
-    this.username = username;
-    this.contributionTime = contributionTime;
-  }
-
-  public void add(String id) {
-    getChangesets().add(id);
-  }
-
-  public boolean contains(String id) {
-    return getChangesets().contains(id);
-  }
-
-  private Set<String> getChangesets() {
-    if (changesets == null) {
-      changesets = new LinkedHashSet<>();
-    }
-    return changesets;
-  }
+  private Instant contributionTime;
 }

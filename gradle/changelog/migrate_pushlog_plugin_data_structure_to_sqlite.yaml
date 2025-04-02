@@ -1,0 +1,2 @@
+- type: added
+  description: Migrate pushlog-plugin data structure to SQLite

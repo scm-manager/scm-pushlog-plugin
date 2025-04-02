@@ -48,7 +48,7 @@ public class PushlogDetailsDtoEmbeddedEnricher implements HalEnricher {
     Changeset changeset = context.oneRequireByType(Changeset.class);
     Repository repository = context.oneRequireByType(Repository.class);
 
-    Optional<PushlogEntry> optionalPushlogEntry = pushlogManager.get(repository).get(changeset.getId());
+    Optional<PushlogEntry> optionalPushlogEntry = pushlogManager.get(repository, changeset.getId());
 
     if (optionalPushlogEntry.isPresent()) {
       PushlogDetailsDto dto = createDto(optionalPushlogEntry.get());
@@ -59,7 +59,7 @@ public class PushlogDetailsDtoEmbeddedEnricher implements HalEnricher {
   private PushlogDetailsDto createDto(PushlogEntry pushlogEntry) {
     PushlogDetailsDto dto = new PushlogDetailsDto();
     if (pushlogEntry.getContributionTime() != null) {
-      Instant timestampAsInstant = Instant.ofEpochMilli(pushlogEntry.getContributionTime());
+      Instant timestampAsInstant = pushlogEntry.getContributionTime();
       dto.setPublishedTime(timestampAsInstant);
     }
     Optional<DisplayUser> optionalDisplayUser = userDisplayManager.get(pushlogEntry.getUsername());

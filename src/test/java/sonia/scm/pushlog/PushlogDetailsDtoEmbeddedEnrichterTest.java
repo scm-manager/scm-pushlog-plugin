@@ -17,8 +17,6 @@
 package sonia.scm.pushlog;
 
 import de.otto.edison.hal.HalRepresentation;
-import org.github.sdorra.jse.SubjectAware;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -35,8 +33,9 @@ import sonia.scm.user.User;
 import sonia.scm.user.UserDisplayManager;
 
 import java.time.Instant;
-import java.util.Optional;
 
+import static java.util.Optional.empty;
+import static java.util.Optional.of;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
@@ -51,10 +50,6 @@ class PushlogDetailsDtoEmbeddedEnricherTest {
   @Mock
   private HalAppender appender;
   @Mock
-  private Changeset changeset;
-  @Mock
-  private Pushlog pushlog;
-  @Mock
   private PushlogManager pushlogManager;
   @Mock
   private UserDisplayManager userDisplayManager;
@@ -63,27 +58,21 @@ class PushlogDetailsDtoEmbeddedEnricherTest {
   private PushlogDetailsDtoEmbeddedEnricher enricher;
 
   private final Repository repository = RepositoryTestData.createHeartOfGold();
-  private DisplayUser displayUser;
-
-  @BeforeEach
-  void init() {
-    when(pushlogManager.get(repository)).thenReturn(pushlog);
-    User user = new User("username", "displayUsername", "username@test.com");
-    displayUser = DisplayUser.from(user);
-  }
+  private final Changeset changeset = new Changeset("42", System.currentTimeMillis(), new Person("username", "username@test.com"));
+  private final DisplayUser displayUser = DisplayUser.from(new User("username", "displayUsername", "username@test.com"));;
 
   @Test
   void shouldAppendEmbeddedPushlogDetailsDtoWithTimestampAndDisplayUser() {
     when(context.oneRequireByType(Repository.class)).thenReturn(repository);
     when(context.oneRequireByType(Changeset.class)).thenReturn(changeset);
-    PushlogEntry pushlogEntry = new PushlogEntry(1, "username", System.currentTimeMillis());
-    when(pushlog.get(changeset.getId())).thenReturn(Optional.of(pushlogEntry));
-    when(userDisplayManager.get(pushlogEntry.getUsername())).thenReturn(Optional.of(displayUser));
+    PushlogEntry pushlogEntry = new PushlogEntry("abc", "username", Instant.now());
+    when(pushlogManager.get(repository, "42")).thenReturn(of(pushlogEntry));
+    when(userDisplayManager.get(pushlogEntry.getUsername())).thenReturn(of(displayUser));
 
     enricher.enrich(context, appender);
 
     PushlogDetailsDto expectedDto = new PushlogDetailsDto();
-    expectedDto.setPublishedTime(Instant.ofEpochMilli(pushlogEntry.getContributionTime()));
+    expectedDto.setPublishedTime(pushlogEntry.getContributionTime());
     expectedDto.setPerson(new Person(displayUser.getDisplayName(), displayUser.getMail()));
     verify(appender).appendEmbedded("pushlogDetails", expectedDto);
   }
@@ -94,7 +83,7 @@ class PushlogDetailsDtoEmbeddedEnricherTest {
     when(context.oneRequireByType(Changeset.class)).thenReturn(changeset);
     PushlogEntry pushlogEntry = new PushlogEntry();
     pushlogEntry.setUsername("username");
-    when(pushlog.get(changeset.getId())).thenReturn(Optional.of(pushlogEntry));
+    when(pushlogManager.get(repository, "42")).thenReturn(of(pushlogEntry));
 
     enricher.enrich(context, appender);
 
@@ -109,10 +98,10 @@ class PushlogDetailsDtoEmbeddedEnricherTest {
   void shouldNotAppendEmbeddedPushlogDetailsDtoWithoutTimestamp() {
     when(context.oneRequireByType(Repository.class)).thenReturn(repository);
     when(context.oneRequireByType(Changeset.class)).thenReturn(changeset);
-    when(pushlog.get(changeset.getId())).thenReturn(Optional.empty());
+    when(pushlogManager.get(repository, "42")).thenReturn(empty());
 
     enricher.enrich(context, appender);
 
-    verify(appender, never()).appendEmbedded(anyString(), (HalRepresentation) any());
+    verify(appender, never()).appendEmbedded(anyString(), any(HalRepresentation.class));
   }
 }

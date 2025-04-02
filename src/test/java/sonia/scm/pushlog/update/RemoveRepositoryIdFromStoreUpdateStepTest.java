@@ -23,7 +23,7 @@ import org.mockito.Answers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import sonia.scm.pushlog.Pushlog;
+import sonia.scm.pushlog.update.RemoveRepositoryIdFromStoreUpdateStep.XmlPushlog;
 import sonia.scm.store.DataStore;
 import sonia.scm.store.DataStoreFactory;
 import sonia.scm.update.RepositoryUpdateIterator;
@@ -63,12 +63,13 @@ class RemoveRepositoryIdFromStoreUpdateStepTest {
     when(storeFactory.getStore(argThat(parameter ->
       parameter.getRepositoryId().equals(REPOSITORY_ID)
         && parameter.getName().equals("pushlog")
-        && parameter.getType().equals(Pushlog.class)))).thenReturn(store);
+        && parameter.getType().equals(XmlPushlog.class)))
+    ).thenReturn(store);
   }
 
   @Test
   void shouldMoveStoreEntry() {
-    Pushlog pushlog = new Pushlog();
+    XmlPushlog pushlog = new XmlPushlog();
     when(store.getOptional(REPOSITORY_ID)).thenReturn(of(pushlog));
 
     updateStep.doUpdate();

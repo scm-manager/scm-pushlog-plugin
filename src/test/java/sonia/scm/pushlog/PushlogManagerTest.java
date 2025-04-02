@@ -16,54 +16,74 @@
 
 package sonia.scm.pushlog;
 
-import org.junit.Test;
-import sonia.scm.AbstractTestBase;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import sonia.scm.repository.Repository;
-import sonia.scm.store.DataStoreFactory;
-import sonia.scm.store.InMemoryDataStore;
-import sonia.scm.store.InMemoryDataStoreFactory;
+import sonia.scm.repository.RepositoryTestData;
+import sonia.scm.store.QueryableStore;
+import sonia.scm.store.QueryableStoreExtension;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
-public class PushlogManagerTest extends AbstractTestBase {
+@ExtendWith(QueryableStoreExtension.class)
+@QueryableStoreExtension.QueryableTypes(PushlogEntry.class)
+class PushlogManagerTest {
 
-    @Test
-    public void testConcurrent() throws InterruptedException {
-        final InMemoryDataStore dataStore = new InMemoryDataStore<Pushlog>();
-        DataStoreFactory factory = new InMemoryDataStoreFactory(dataStore);
-        final PushlogManager manager = new PushlogManager(factory);
-        final Repository repository = new Repository("abc", "git", "abc", "def");
+  private PushlogManager manager;
+  private final Repository repository = RepositoryTestData.createHeartOfGold();
 
-        final AtomicLong counter = new AtomicLong();
+  @BeforeEach
+  void initStore(PushlogEntryStoreFactory storeFactory) {
+    manager = new PushlogManager(storeFactory);
+  }
 
-        ExecutorService service = Executors.newFixedThreadPool(10);
+  @Test
+  void shouldStoreNewEntries(PushlogEntryStoreFactory storeFactory) {
+    PushlogEntry entry = new PushlogEntry("1", "trillian", Instant.now());
+    manager.store(entry, repository, List.of("r1", "r2"));
 
-        for (int i = 0; i < 100; i++) {
-            service.execute(() -> {
-                Pushlog pushlog = null;
+    Map<String, PushlogEntry> all = storeFactory.getMutable(repository).getAll();
+    assertThat(all).hasSize(2);
+    assertThat(all.get("r1")).isEqualTo(entry);
+    assertThat(all.get("r2")).isEqualTo(entry);
+  }
 
-                try {
-                    pushlog = manager.getAndLock(repository);
+  @Test
+  void shouldNotReplaceExistingEntries(PushlogEntryStoreFactory storeFactory) {
+    PushlogEntry existingEntry = new PushlogEntry("1", "trillian", Instant.now());
+    manager.store(existingEntry, repository, List.of("r1"));
 
-                    PushlogEntry entry = pushlog.createEntry("user");
-                    for (int i1 = 0; i1 < 10; i1++) {
-                        entry.add("c" + counter.incrementAndGet());
-                    }
+    PushlogEntry newEntry = new PushlogEntry("2", "arthur", Instant.now());
+    manager.store(newEntry, repository, List.of("r1", "r2"));
 
-                } finally {
-                    manager.store(pushlog, repository);
-                }
-            });
-        }
 
-        service.shutdown();
-        service.awaitTermination(5, TimeUnit.MINUTES);
+    Map<String, PushlogEntry> all = storeFactory.getMutable(repository).getAll();
+    assertThat(all).hasSize(2);
+    assertThat(all.get("r1")).isEqualTo(existingEntry);
+    assertThat(all.get("r2")).isEqualTo(newEntry);
+  }
 
-        assertEquals(100, manager.get(repository).getEntries().size());
+  @Test
+  void shouldSortContributionsByTimestamp(PushlogEntryStoreFactory storeFactory) {
+    int entries = 5;
+    Instant baseTime = Instant.now().plusSeconds(1800);
+    for (int i = 0; i < entries; i++) {
+      PushlogEntry entry = new PushlogEntry(Integer.toString(i), "user" + i, baseTime.plusSeconds(i * 10));
+      manager.store(entry, repository, List.of("r" + (5 - i)));
     }
+    assertThat(storeFactory.getMutable(repository).getAll()).hasSize(entries);
+
+    List<PushlogEntry> all = storeFactory.get(repository).query()
+      .orderBy(PushlogEntryQueryFields.CONTRIBUTIONTIME, QueryableStore.Order.ASC)
+      .findAll();
+
+    assertThat(all)
+      .extracting(PushlogEntry::getPushlogId)
+      .containsExactly("0", "1", "2", "3", "4");
+  }
 }
