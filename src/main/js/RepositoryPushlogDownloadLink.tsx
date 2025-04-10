@@ -14,14 +14,28 @@
  * along with this program. If not, see https://www.gnu.org/licenses/.
  */
 
-import { binder, extensionPoints } from "@scm-manager/ui-extensions";
-import PushlogDetails from "./PushlogDetails";
-import RepositoryPushlogDownloadLink from "./RepositoryPushlogDownloadLink";
+import React, { FC } from "react";
+import { Repository } from "@scm-manager/ui-types";
+import { useTranslation } from "react-i18next";
 
-binder.bind("changesets.contributor.table.row", PushlogDetails, {
-  predicate: (props) => !!props.changeset._embedded.pushlogDetails,
-});
+type Props = {
+  repository: Repository;
+};
 
-binder.bind<extensionPoints.RepositoryInformationTableBottom>("repository.information.table.bottom", RepositoryPushlogDownloadLink, {
-  predicate:(props) => !!props.repository._links.pushlogExport,
-});
+const RepositoryPushlogDownloadLink: FC<Props> = ({ repository }) => {
+  const [t] = useTranslation("plugins");
+  const downloadLink = (repository._links.pushlogExport as { href: string }).href;
+
+  return (
+    <tr>
+      <th>{t("scm-pushlog-plugin.repository.key")}</th>
+      <td>
+        <a href={downloadLink}>
+          {t("scm-pushlog-plugin.repository.link")}
+        </a>
+      </td>
+    </tr>
+  );
+};
+export default RepositoryPushlogDownloadLink;
+

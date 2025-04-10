@@ -1,4 +1,10 @@
 {
+  "scm-pushlog-plugin": {
+    "repository": {
+      "key": "Pushlog",
+      "link": "Download pushlog as CSV"
+    }
+  },
   "changeset": {
     "contributor": {
       "type": {
