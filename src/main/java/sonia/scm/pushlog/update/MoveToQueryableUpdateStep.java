@@ -36,8 +36,8 @@ import sonia.scm.version.Version;
 
 import java.io.Serializable;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Set;
 
 @Extension
@@ -70,10 +70,10 @@ public class MoveToQueryableUpdateStep implements RepositoryUpdateStep {
               : Instant.ofEpochMilli(entry.getContributionTime());
             return entry.getChangesets()
               .stream()
-              .map(changeset -> new QueryableMaintenanceStore.Row(
+              .map(changeset -> new QueryableMaintenanceStore.Row<>(
                 new String[]{repositoryUpdateContext.getRepositoryId()},
                 String.valueOf(changeset),
-                new PushlogEntry(Long.toString(entry.getId()), entry.getUsername(), contributionTime)
+                new PushlogEntry(entry.getId(), entry.getUsername(), contributionTime)
               ));
           })
         ));
@@ -93,8 +93,9 @@ public class MoveToQueryableUpdateStep implements RepositoryUpdateStep {
   @XmlAccessorType(XmlAccessType.FIELD)
   static class XmlPushlog implements Serializable {
 
+    @SuppressWarnings("java:S1948") // we use an ArrayList, which is serializable.
     @XmlElement(name = "entry")
-    List<XmlPushlogEntry> entries;
+    ArrayList<XmlPushlogEntry> entries;
   }
 
   @Getter

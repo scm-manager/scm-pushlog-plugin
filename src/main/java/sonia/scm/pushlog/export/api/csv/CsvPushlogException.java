@@ -14,30 +14,13 @@
  * along with this program. If not, see https://www.gnu.org/licenses/.
  */
 
-package sonia.scm.pushlog;
+package sonia.scm.pushlog.export.api.csv;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import sonia.scm.repository.Repository;
-import sonia.scm.store.QueryableType;
+import sonia.scm.pushlog.PushlogEntry;
+import sonia.scm.store.QueryableStore;
 
-import java.time.Instant;
-
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@QueryableType(Repository.class)
-public class PushlogEntry {
-
-  private long pushlogId;
-
-  private String username;
-
-  private Instant contributionTime;
-
-  public PushlogEntry(String username, Instant contributionTime) {
-    this.username = username;
-    this.contributionTime = contributionTime;
+public class CsvPushlogException extends RuntimeException {
+  public CsvPushlogException(QueryableStore.Result<PushlogEntry> result, Exception cause) {
+    super(String.format("Result %s could not be written to CSV line.", result), cause);
   }
 }

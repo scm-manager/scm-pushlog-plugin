@@ -59,13 +59,13 @@ class PushlogDetailsDtoEmbeddedEnricherTest {
 
   private final Repository repository = RepositoryTestData.createHeartOfGold();
   private final Changeset changeset = new Changeset("42", System.currentTimeMillis(), new Person("username", "username@test.com"));
-  private final DisplayUser displayUser = DisplayUser.from(new User("username", "displayUsername", "username@test.com"));;
+  private final DisplayUser displayUser = DisplayUser.from(new User("username", "displayUsername", "username@test.com"));
 
   @Test
   void shouldAppendEmbeddedPushlogDetailsDtoWithTimestampAndDisplayUser() {
     when(context.oneRequireByType(Repository.class)).thenReturn(repository);
     when(context.oneRequireByType(Changeset.class)).thenReturn(changeset);
-    PushlogEntry pushlogEntry = new PushlogEntry("abc", "username", Instant.now());
+    PushlogEntry pushlogEntry = new PushlogEntry(1, "username", Instant.now());
     when(pushlogManager.get(repository, "42")).thenReturn(of(pushlogEntry));
     when(userDisplayManager.get(pushlogEntry.getUsername())).thenReturn(of(displayUser));
 

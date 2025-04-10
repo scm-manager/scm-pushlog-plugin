@@ -29,7 +29,6 @@ import sonia.scm.repository.PostReceiveRepositoryHookEvent;
 import sonia.scm.repository.Repository;
 import sonia.scm.repository.api.HookChangesetBuilder;
 import sonia.scm.repository.api.HookContext;
-import sonia.scm.security.KeyGenerator;
 import sonia.scm.security.Role;
 
 import java.time.Instant;
@@ -43,12 +42,10 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class PushlogHookTest {
+class PushlogHookTest {
 
   @Mock
   private PushlogManager pushlogManager;
-  @Mock
-  private KeyGenerator keyGenerator;
   @Mock
   private Subject subject;
   @Mock
@@ -68,11 +65,11 @@ public class PushlogHookTest {
 
   @BeforeEach
   public void setUp() {
-    pushlogHook = new PushlogHook(pushlogManager, keyGenerator);
+    pushlogHook = new PushlogHook(pushlogManager);
   }
 
   @Test
-  public void testOnEventWithoutUserRole() {
+  void testOnEventWithoutUserRole() {
     when(subject.hasRole(Role.USER)).thenReturn(false);
 
     try (MockedStatic<SecurityUtils> securityUtilsMock = mockStatic(SecurityUtils.class)) {
@@ -80,12 +77,12 @@ public class PushlogHookTest {
 
       pushlogHook.onEvent(event);
       verify(subject).hasRole(Role.USER);
-      verifyNoInteractions(pushlogManager, keyGenerator);
+      verifyNoInteractions(pushlogManager);
     }
   }
 
   @Test
-  public void testOnEventWithEmptyUsername() {
+  void testOnEventWithEmptyUsername() {
     when(subject.hasRole(Role.USER)).thenReturn(true);
     when(subject.getPrincipal()).thenReturn("");
 
@@ -93,12 +90,12 @@ public class PushlogHookTest {
       securityUtilsMock.when(SecurityUtils::getSubject).thenReturn(subject);
       pushlogHook.onEvent(event);
 
-      verifyNoInteractions(pushlogManager, keyGenerator);
+      verifyNoInteractions(pushlogManager);
     }
   }
 
   @Test
-  public void testOnEventWithNullRepository() {
+  void testOnEventWithNullRepository() {
     when(subject.hasRole(Role.USER)).thenReturn(true);
     when(subject.getPrincipal()).thenReturn("testUser");
 
@@ -108,12 +105,12 @@ public class PushlogHookTest {
       securityUtilsMock.when(SecurityUtils::getSubject).thenReturn(subject);
       pushlogHook.onEvent(event);
 
-      verifyNoInteractions(pushlogManager, keyGenerator);
+      verifyNoInteractions(pushlogManager);
     }
   }
 
- @Test
-  public void testOnEventWithoutChangesets() {
+  @Test
+  void testOnEventWithoutChangesets() {
     when(subject.hasRole(Role.USER)).thenReturn(true);
     when(subject.getPrincipal()).thenReturn("testUser");
 
@@ -125,12 +122,12 @@ public class PushlogHookTest {
       securityUtilsMock.when(SecurityUtils::getSubject).thenReturn(subject);
       pushlogHook.onEvent(event);
 
-      verifyNoInteractions(pushlogManager, keyGenerator);
+      verifyNoInteractions(pushlogManager);
     }
   }
 
   @Test
-  public void testOnEventSuccessfulPush() {
+  void testOnEventSuccessfulPush() {
     when(subject.hasRole(Role.USER)).thenReturn(true);
     when(subject.getPrincipal()).thenReturn("testUser");
     when(event.getRepository()).thenReturn(repository);
@@ -143,17 +140,13 @@ public class PushlogHookTest {
     when(changeset1.getId()).thenReturn("rev1");
     when(changeset2.getId()).thenReturn("rev2");
 
-    String generatedKey = "generatedKey123";
-    when(keyGenerator.createKey()).thenReturn(generatedKey);
-
     try (MockedStatic<SecurityUtils> securityUtilsMock = mockStatic(SecurityUtils.class)) {
       securityUtilsMock.when(SecurityUtils::getSubject).thenReturn(subject);
 
       pushlogHook.onEvent(event);
       verify(pushlogManager).store(
         argThat(entry ->
-          entry.getPushlogId().equals(generatedKey) &&
-            entry.getUsername().equals("testUser") &&
+          entry.getUsername().equals("testUser") &&
             entry.getContributionTime().equals(creationDate)
         ),
         eq(repository),

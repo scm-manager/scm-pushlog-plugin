@@ -31,7 +31,7 @@ import sonia.scm.store.QueryableStoreExtension;
 import sonia.scm.store.QueryableStoreFactory;
 import sonia.scm.update.StoreUpdateStepUtilFactory;
 
-import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -46,7 +46,7 @@ class MoveToQueryableUpdateStepTest {
   @Mock(answer = Answers.RETURNS_DEEP_STUBS)
   private StoreUpdateStepUtilFactory storeUpdateStepUtilFactory;
 
-  private DataStoreFactory storeFactory = new InMemoryByteDataStoreFactory();
+  private final DataStoreFactory storeFactory = new InMemoryByteDataStoreFactory();
 
   private MoveToQueryableUpdateStep updateStep;
 
@@ -63,7 +63,8 @@ class MoveToQueryableUpdateStepTest {
     MoveToQueryableUpdateStep.XmlPushlogEntry entry = new MoveToQueryableUpdateStep.XmlPushlogEntry(1L, "trillian", 1234567L);
     entry.add("42");
     MoveToQueryableUpdateStep.XmlPushlog pushlog = new MoveToQueryableUpdateStep.XmlPushlog();
-    pushlog.entries = List.of(entry);
+    pushlog.entries = new ArrayList<>();
+    pushlog.entries.add(entry);
     storeFactory.withType(MoveToQueryableUpdateStep.XmlPushlog.class)
       .withName("pushlog")
       .forRepository(repositoryId)

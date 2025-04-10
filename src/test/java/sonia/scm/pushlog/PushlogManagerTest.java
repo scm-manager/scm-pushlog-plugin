@@ -25,6 +25,8 @@ import sonia.scm.store.QueryableStore;
 import sonia.scm.store.QueryableStoreExtension;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -44,21 +46,33 @@ class PushlogManagerTest {
 
   @Test
   void shouldStoreNewEntries(PushlogEntryStoreFactory storeFactory) {
-    PushlogEntry entry = new PushlogEntry("1", "trillian", Instant.now());
+    PushlogEntry entry = new PushlogEntry("trillian", Instant.now());
     manager.store(entry, repository, List.of("r1", "r2"));
 
     Map<String, PushlogEntry> all = storeFactory.getMutable(repository).getAll();
     assertThat(all).hasSize(2);
     assertThat(all.get("r1")).isEqualTo(entry);
     assertThat(all.get("r2")).isEqualTo(entry);
+    assertThat(all.get("r1").getPushlogId()).isEqualTo(1);
+    assertThat(all.get("r2").getPushlogId()).isEqualTo(1);
+  }
+
+  @Test
+  void shouldIncrementPushlogId(PushlogEntryStoreFactory storeFactory) {
+    manager.store(new PushlogEntry("trillian", Instant.now()), repository, List.of("r1"));
+    manager.store(new PushlogEntry("trillian", Instant.now()), repository, List.of("r2"));
+
+    Map<String, PushlogEntry> all = storeFactory.getMutable(repository).getAll();
+    assertThat(all.get("r1").getPushlogId()).isEqualTo(1);
+    assertThat(all.get("r2").getPushlogId()).isEqualTo(2);
   }
 
   @Test
   void shouldNotReplaceExistingEntries(PushlogEntryStoreFactory storeFactory) {
-    PushlogEntry existingEntry = new PushlogEntry("1", "trillian", Instant.now());
+    PushlogEntry existingEntry = new PushlogEntry("trillian", Instant.now());
     manager.store(existingEntry, repository, List.of("r1"));
 
-    PushlogEntry newEntry = new PushlogEntry("2", "arthur", Instant.now());
+    PushlogEntry newEntry = new PushlogEntry("arthur", Instant.now());
     manager.store(newEntry, repository, List.of("r1", "r2"));
 
 
@@ -69,21 +83,18 @@ class PushlogManagerTest {
   }
 
   @Test
-  void shouldSortContributionsByTimestamp(PushlogEntryStoreFactory storeFactory) {
+  void shouldSortContributionsById(PushlogEntryStoreFactory storeFactory) {
     int entries = 5;
     Instant baseTime = Instant.now().plusSeconds(1800);
     for (int i = 0; i < entries; i++) {
-      PushlogEntry entry = new PushlogEntry(Integer.toString(i), "user" + i, baseTime.plusSeconds(i * 10));
+      PushlogEntry entry = new PushlogEntry("user" + i, baseTime.plusSeconds(i * 10));
       manager.store(entry, repository, List.of("r" + (5 - i)));
     }
     assertThat(storeFactory.getMutable(repository).getAll()).hasSize(entries);
 
-    List<PushlogEntry> all = storeFactory.get(repository).query()
-      .orderBy(PushlogEntryQueryFields.CONTRIBUTIONTIME, QueryableStore.Order.ASC)
-      .findAll();
+    Collection<QueryableStore.Result<PushlogEntry>> all = new ArrayList<>();
+    manager.doExport(repository, all::add, QueryableStore.Order.ASC);
 
-    assertThat(all)
-      .extracting(PushlogEntry::getPushlogId)
-      .containsExactly("0", "1", "2", "3", "4");
+    assertThat(all).extracting(r -> r.getEntity().getPushlogId()).containsExactly(1L, 2L, 3L, 4L, 5L);
   }
 }

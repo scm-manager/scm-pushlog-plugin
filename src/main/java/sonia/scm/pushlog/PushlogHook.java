@@ -29,7 +29,6 @@ import sonia.scm.repository.Changeset;
 import sonia.scm.repository.PostReceiveRepositoryHookEvent;
 import sonia.scm.repository.Repository;
 import sonia.scm.repository.RepositoryHookEvent;
-import sonia.scm.security.KeyGenerator;
 import sonia.scm.security.Role;
 
 import java.time.Instant;
@@ -42,12 +41,10 @@ import java.util.Collection;
 public class PushlogHook {
 
   private final PushlogManager pushlogManager;
-  private final KeyGenerator keyGenerator;
 
   @Inject
-  public PushlogHook(PushlogManager pushlogManager, KeyGenerator keyGenerator) {
+  public PushlogHook(PushlogManager pushlogManager) {
     this.pushlogManager = pushlogManager;
-    this.keyGenerator = keyGenerator;
   }
 
   @Subscribe
@@ -89,7 +86,6 @@ public class PushlogHook {
     for (Changeset c : changesets) {
       revisions.add(c.getId());
     }
-    String pushlogId = keyGenerator.createKey();
-    pushlogManager.store(new PushlogEntry(pushlogId, username, creationDate), repository, revisions);
+    pushlogManager.store(new PushlogEntry(username, creationDate), repository, revisions);
   }
 }
