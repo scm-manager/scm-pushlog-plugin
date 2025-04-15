@@ -19,7 +19,7 @@ plugins {
 }
 
 scmPlugin {
-  scmVersion = "3.7.5-SNAPSHOT"
+  scmVersion = "3.8.0"
   displayName = "Pushlog"
   description = "Tracks who pushed what to a repository"
   author = "Cloudogu GmbH"
