@@ -25,7 +25,7 @@ import sonia.scm.store.QueryableStore;
 import sonia.scm.store.StoreException;
 
 import java.util.Collection;
-
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 
@@ -49,8 +49,7 @@ public class PushlogManager {
     log.debug("store pushlog for repository {}", repository);
     try (QueryableMutableStore<PushlogEntry> store = storeFactory.getMutable(repository.getId())) {
       store.transactional(() -> {
-          Long maxId = store.query(PushlogEntryQueryFields.REPOSITORY_ID.eq(repository.getId()))
-            .max(PushlogEntryQueryFields.PUSHLOGID);
+          Long maxId = getMaxId(store, repository);
           entry.setPushlogId(maxId == null ? 1 : maxId + 1);
           revisions.forEach(
             revision -> {
@@ -66,6 +65,29 @@ public class PushlogManager {
     log.debug("stored {} pushlogs for repository {}", revisions.size(), repository);
   }
 
+  public void storeRevisionEntryMap(Map<String, PushlogEntry> revisionsWithPushlogs, Repository repository) {
+    log.debug("store pushlog for repository {}", repository);
+    try (QueryableMutableStore<PushlogEntry> store = storeFactory.getMutable(repository.getId())) {
+      store.transactional(() -> {
+          Long maxId = getMaxId(store, repository);
+          revisionsWithPushlogs.forEach((revision, entry) -> {
+            entry.setPushlogId(maxId == null ? 1 : maxId + 1);
+            if (store.getOptional(revision).isEmpty()) {
+              store.put(revision, entry);
+            }
+          });
+          return true;
+        }
+      );
+    }
+    log.debug("stored {} pushlogs for repository {}", revisionsWithPushlogs.size(), repository);
+  }
+
+  private Long getMaxId(QueryableStore<PushlogEntry> store, Repository repository) {
+    return store.query(PushlogEntryQueryFields.REPOSITORY_ID.eq(repository.getId()))
+      .max(PushlogEntryQueryFields.PUSHLOGID);
+  }
+
   public Optional<PushlogEntry> get(Repository repository, String id) {
     try (QueryableMutableStore<PushlogEntry> store = storeFactory.getMutable(repository.getId())) {
       return store.getOptional(id);
@@ -76,9 +98,9 @@ public class PushlogManager {
    * Returns a map of all pushlogs from a {@link Repository} with the revision as its key and {@link PushlogEntry} entries.
    *
    * @param repository Repository from where the entries are fetched from.
-   * @param consumer Consumer function receiving {@link QueryableStore.Result} objects. Each of them contains
-   *                                 a {@link String} key representing the revision and the {@link PushlogEntry} value.
-   * @param order Whether the result is ordered in a descending or ascending fashion.
+   * @param consumer   Consumer function receiving {@link QueryableStore.Result} objects. Each of them contains
+   *                   a {@link String} key representing the revision and the {@link PushlogEntry} value.
+   * @param order      Whether the result is ordered in a descending or ascending fashion.
    */
   public void doExport(Repository repository, Consumer<QueryableStore.Result<PushlogEntry>> consumer, QueryableStore.Order order) {
     log.debug("start export for repository {} with order {}", repository, order);
@@ -88,7 +110,7 @@ public class PushlogManager {
         .withIds()
         .orderBy(PushlogEntryQueryFields.PUSHLOGID, order)
         .forEach(consumer);
-    } catch(Exception e) {
+    } catch (Exception e) {
       throw new StoreException(
         format("An exception occurred while trying to export pushlog entries from repository %s", repository), e);
     }

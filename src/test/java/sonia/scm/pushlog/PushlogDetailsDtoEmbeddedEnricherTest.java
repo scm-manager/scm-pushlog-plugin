@@ -65,7 +65,7 @@ class PushlogDetailsDtoEmbeddedEnricherTest {
   void shouldAppendEmbeddedPushlogDetailsDtoWithTimestampAndDisplayUser() {
     when(context.oneRequireByType(Repository.class)).thenReturn(repository);
     when(context.oneRequireByType(Changeset.class)).thenReturn(changeset);
-    PushlogEntry pushlogEntry = new PushlogEntry(1, "username", Instant.now());
+    PushlogEntry pushlogEntry = new PushlogEntry(1, "username", Instant.now(), null);
     when(pushlogManager.get(repository, "42")).thenReturn(of(pushlogEntry));
     when(userDisplayManager.get(pushlogEntry.getUsername())).thenReturn(of(displayUser));
 

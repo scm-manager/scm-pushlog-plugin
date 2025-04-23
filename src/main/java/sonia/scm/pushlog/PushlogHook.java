@@ -32,14 +32,15 @@ import sonia.scm.repository.RepositoryHookEvent;
 import sonia.scm.security.Role;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 @Extension
 @EagerSingleton
 public class PushlogHook {
 
+  private static final int MAXIMUM_DESCRIPTION_LENGTH = 100;
   private final PushlogManager pushlogManager;
 
   @Inject
@@ -82,10 +83,38 @@ public class PushlogHook {
 
   private void handlePush(String username, Repository repository,
                           Instant creationDate, Iterable<Changeset> changesets) {
-    Collection<String> revisions = new ArrayList<>();
+    Map<String, PushlogEntry> revisionWithPushlogs = new HashMap<>();
     for (Changeset c : changesets) {
-      revisions.add(c.getId());
+      revisionWithPushlogs.put(
+        c.getId(),
+        new PushlogEntry(username, creationDate, limitChangesetDescription(c.getDescription()))
+      );
     }
-    pushlogManager.store(new PushlogEntry(username, creationDate), repository, revisions);
+    pushlogManager.storeRevisionEntryMap(revisionWithPushlogs, repository);
+  }
+
+  //Take the first line of the description and limit it to the maximum description length
+  private String limitChangesetDescription(String description) {
+    if (description == null) {
+      return null;
+    }
+
+    int lineLimit = 0;
+    while (lineLimit < description.length()) {
+      if (isNewline(description.charAt(lineLimit))) {
+        break;
+      }
+      ++lineLimit;
+    }
+
+    if (lineLimit > MAXIMUM_DESCRIPTION_LENGTH) {
+      return description.substring(0, MAXIMUM_DESCRIPTION_LENGTH) + "...";
+    }
+
+    return description.substring(0, lineLimit);
+  }
+
+  private boolean isNewline(char c) {
+    return c == '\n' || c == '\r';
   }
 }

@@ -73,7 +73,7 @@ public class MoveToQueryableUpdateStep implements RepositoryUpdateStep {
               .map(changeset -> new QueryableMaintenanceStore.Row<>(
                 new String[]{repositoryUpdateContext.getRepositoryId()},
                 String.valueOf(changeset),
-                new PushlogEntry(entry.getId(), entry.getUsername(), contributionTime)
+                new PushlogEntry(entry.getId(), entry.getUsername(), contributionTime, null)
               ));
           })
         ));

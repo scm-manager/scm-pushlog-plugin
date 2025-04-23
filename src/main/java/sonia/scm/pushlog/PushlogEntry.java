@@ -31,13 +31,17 @@ import java.time.Instant;
 public class PushlogEntry {
 
   private long pushlogId;
-
   private String username;
-
   private Instant contributionTime;
+  private String description;
 
   public PushlogEntry(String username, Instant contributionTime) {
+    this(username, contributionTime, null);
+  }
+
+  public PushlogEntry(String username, Instant contributionTime, String description) {
     this.username = username;
     this.contributionTime = contributionTime;
+    this.description = description;
   }
 }

@@ -125,11 +125,11 @@ class CsvResourceTest {
     Map<String, PushlogEntry> entries = new HashMap<>();
 
     entries.put(REVISION_1, new PushlogEntry(2, USER_1,
-      timestampsAvailable.equals(YES) || timestampsAvailable.equals(MIXED) ? TEST_TIME_NEWEST.toInstant() : null));
+      timestampsAvailable.equals(YES) || timestampsAvailable.equals(MIXED) ? TEST_TIME_NEWEST.toInstant() : null, "First Commit"));
     entries.put(REVISION_2, new PushlogEntry(1, USER_2,
-      timestampsAvailable.equals(YES) ? TEST_TIME_MID.toInstant() : null));
+      timestampsAvailable.equals(YES) ? TEST_TIME_MID.toInstant() : null, "Second Commit"));
     entries.put(REVISION_3, new PushlogEntry(0, USER_3,
-      timestampsAvailable.equals(YES) || timestampsAvailable.equals(MIXED) ? TEST_TIME_OLDEST.toInstant() : null));
+      timestampsAvailable.equals(YES) || timestampsAvailable.equals(MIXED) ? TEST_TIME_OLDEST.toInstant() : null, null));
 
     return entries;
   }
@@ -149,7 +149,7 @@ class CsvResourceTest {
     void shouldParseSingleEntryCsv() throws URISyntaxException, UnsupportedEncodingException {
       Instant testTime = Instant.now().minus(365, ChronoUnit.DAYS);
 
-      setDbResult(Map.of(REVISION_1, new PushlogEntry(1, "darthvader", testTime)));
+      setDbResult(Map.of(REVISION_1, new PushlogEntry(1, "darthvader", testTime, "Commit Message")));
 
       MockHttpRequest request = MockHttpRequest.get("/v2/pushlogs/csv/" + repository.getNamespace() + "/" + repository.getName());
       MockHttpResponse response = new MockHttpResponse();
@@ -161,9 +161,9 @@ class CsvResourceTest {
       String[] lines = response.getContentAsString().split("\n");
 
       assertThat(lines).hasSize(2);
-      assertThat(lines[0]).contains(HEADER);
-      assertThat(lines[1]).contains(
-        format("%s,%s,%s", REVISION_1, "darthvader", testTime.atZone(DEFAULT_ZONE).format(FORMATTER))
+      assertThat(lines[0]).isEqualTo(HEADER);
+      assertThat(lines[1]).isEqualTo(
+        format("%s,%s,%s,%s,%s", 1, REVISION_1, "darthvader", testTime.atZone(DEFAULT_ZONE).format(FORMATTER), "Commit Message")
       );
     }
 
@@ -183,16 +183,33 @@ class CsvResourceTest {
 
       assertThat(lines).hasSize(4);
 
-      assertThat(lines[0]).contains(HEADER);
-      assertThat(lines[1]).contains(
-        format("%s,%s,%s", REVISION_1, USER_1,
-          withEmptyStringIfNull(entries.get(REVISION_1).getContributionTime(), TEST_TIME_NEWEST)));
-      assertThat(lines[2]).contains(
-        format("%s,%s,%s", REVISION_2, USER_2,
-          withEmptyStringIfNull(entries.get(REVISION_2).getContributionTime(), TEST_TIME_MID)));
-      assertThat(lines[3]).contains(
-        format("%s,%s,%s", REVISION_3, USER_3,
-          withEmptyStringIfNull(entries.get(REVISION_3).getContributionTime(), TEST_TIME_OLDEST)));
+      assertThat(lines[0]).isEqualTo(HEADER);
+      assertThat(lines[1]).isEqualTo(
+        format("%s,%s,%s,%s,%s",
+          2,
+          REVISION_1,
+          USER_1,
+          withEmptyStringIfNull(entries.get(REVISION_1).getContributionTime(), TEST_TIME_NEWEST),
+          "First Commit"
+        )
+      );
+      assertThat(lines[2]).isEqualTo(
+        format("%s,%s,%s,%s,%s",
+          1,
+          REVISION_2,
+          USER_2,
+          withEmptyStringIfNull(entries.get(REVISION_2).getContributionTime(), TEST_TIME_MID),
+          "Second Commit"
+        )
+      );
+      assertThat(lines[3]).isEqualTo(
+        format("%s,%s,%s,%s,",
+          0,
+          REVISION_3,
+          USER_3,
+          withEmptyStringIfNull(entries.get(REVISION_3).getContributionTime(), TEST_TIME_OLDEST)
+        )
+      );
     }
 
     @Test
@@ -226,16 +243,33 @@ class CsvResourceTest {
       String[] lines = response.getContentAsString().split("\n");
 
       assertThat(lines).hasSize(4);
-      assertThat(lines[0]).contains(HEADER);
-      assertThat(lines[1]).contains(
-        format("%s,%s,%s", REVISION_1, USER_1,
-          withEmptyStringIfNull(entries.get(REVISION_1).getContributionTime(), TEST_TIME_NEWEST)));
-      assertThat(lines[2]).contains(
-        format("%s,%s,%s", REVISION_2, USER_2,
-          withEmptyStringIfNull(entries.get(REVISION_2).getContributionTime(), TEST_TIME_MID)));
-      assertThat(lines[3]).contains(
-        format("%s,%s,%s", REVISION_3, USER_3,
-          withEmptyStringIfNull(entries.get(REVISION_3).getContributionTime(), TEST_TIME_OLDEST)));
+      assertThat(lines[0]).isEqualTo(HEADER);
+      assertThat(lines[1]).isEqualTo(
+        format("%s,%s,%s,%s,%s",
+          2,
+          REVISION_1,
+          USER_1,
+          withEmptyStringIfNull(entries.get(REVISION_1).getContributionTime(), TEST_TIME_NEWEST),
+          "First Commit"
+        )
+      );
+      assertThat(lines[2]).isEqualTo(
+        format("%s,%s,%s,%s,%s",
+          1,
+          REVISION_2,
+          USER_2,
+          withEmptyStringIfNull(entries.get(REVISION_2).getContributionTime(), TEST_TIME_MID),
+          "Second Commit"
+        )
+      );
+      assertThat(lines[3]).isEqualTo(
+        format("%s,%s,%s,%s,",
+          0,
+          REVISION_3,
+          USER_3,
+          withEmptyStringIfNull(entries.get(REVISION_3).getContributionTime(), TEST_TIME_OLDEST)
+        )
+      );
     }
   }
 }

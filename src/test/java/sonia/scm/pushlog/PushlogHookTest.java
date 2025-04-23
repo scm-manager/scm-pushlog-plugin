@@ -33,9 +33,8 @@ import sonia.scm.security.Role;
 
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Map;
 
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -62,6 +61,7 @@ class PushlogHookTest {
   private Changeset changeset2;
 
   private PushlogHook pushlogHook;
+  private final Instant creationDate = Instant.now();
 
   @BeforeEach
   public void setUp() {
@@ -127,11 +127,73 @@ class PushlogHookTest {
   }
 
   @Test
-  void testOnEventSuccessfulPush() {
+  void testOnEventSuccessfulPushWithOneLineCommitMessage() {
+    when(changeset1.getDescription()).thenReturn("Commit Message");
+    when(changeset2.getDescription()).thenReturn("Second commit message");
+    executeSuccessfulPushTestCases(() -> {
+      pushlogHook.onEvent(event);
+      verify(pushlogManager).storeRevisionEntryMap(
+        Map.of(
+          "rev1", new PushlogEntry("testUser", creationDate, "Commit Message"),
+          "rev2", new PushlogEntry("testUser", creationDate, "Second commit message")
+        ),
+        repository
+      );
+    });
+  }
+
+  @Test
+  void testOnEventSuccessfulPushWithLimitedOneLineCommitMessage() {
+    when(changeset1.getDescription()).thenReturn("a".repeat(100));
+    when(changeset2.getDescription()).thenReturn("b".repeat(101));
+    executeSuccessfulPushTestCases(() -> {
+      pushlogHook.onEvent(event);
+      verify(pushlogManager).storeRevisionEntryMap(
+        Map.of(
+          "rev1", new PushlogEntry("testUser", creationDate, "a".repeat(100)),
+          "rev2", new PushlogEntry("testUser", creationDate, "b".repeat(100) + "...")
+        ),
+        repository
+      );
+    });
+  }
+
+  @Test
+  void testOnEventSuccessfulPushWithMultiLineCommitMessage() {
+    when(changeset1.getDescription()).thenReturn("First Line\nSecond Line");
+    when(changeset2.getDescription()).thenReturn("1. Line\n2. Line\n3. Line");
+    executeSuccessfulPushTestCases(() -> {
+      pushlogHook.onEvent(event);
+      verify(pushlogManager).storeRevisionEntryMap(
+        Map.of(
+          "rev1", new PushlogEntry("testUser", creationDate, "First Line"),
+          "rev2", new PushlogEntry("testUser", creationDate, "1. Line")
+        ),
+        repository
+      );
+    });
+  }
+
+  @Test
+  void testOnEventSuccessfulPushWithLimitedMultiLineCommitMessage() {
+    when(changeset1.getDescription()).thenReturn("First Line\n" + "a".repeat(100));
+    when(changeset2.getDescription()).thenReturn("b".repeat(101) + "\nSecond Line");
+    executeSuccessfulPushTestCases(() -> {
+      pushlogHook.onEvent(event);
+      verify(pushlogManager).storeRevisionEntryMap(
+        Map.of(
+          "rev1", new PushlogEntry("testUser", creationDate, "First Line"),
+          "rev2", new PushlogEntry("testUser", creationDate, "b".repeat(100) + "...")
+        ),
+        repository
+      );
+    });
+  }
+
+  private void executeSuccessfulPushTestCases(Runnable testCase) {
     when(subject.hasRole(Role.USER)).thenReturn(true);
     when(subject.getPrincipal()).thenReturn("testUser");
     when(event.getRepository()).thenReturn(repository);
-    Instant creationDate = Instant.now();
     when(event.getCreationDate()).thenReturn(creationDate);
     when(event.getContext()).thenReturn(context);
     when(context.getChangesetProvider()).thenReturn(changesetBuilder);
@@ -142,18 +204,7 @@ class PushlogHookTest {
 
     try (MockedStatic<SecurityUtils> securityUtilsMock = mockStatic(SecurityUtils.class)) {
       securityUtilsMock.when(SecurityUtils::getSubject).thenReturn(subject);
-
-      pushlogHook.onEvent(event);
-      verify(pushlogManager).store(
-        argThat(entry ->
-          entry.getUsername().equals("testUser") &&
-            entry.getContributionTime().equals(creationDate)
-        ),
-        eq(repository),
-        argThat(revisions ->
-          revisions.containsAll(Arrays.asList("rev1", "rev2"))
-        )
-      );
+      testCase.run();
     }
   }
 }

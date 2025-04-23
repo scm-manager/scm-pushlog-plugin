@@ -1,0 +1,2 @@
+- type: added
+  description: The first line of each commit message is now added to the pushlog csv export

@@ -124,8 +124,9 @@ public class CsvResource {
       result.getEntity().getPushlogId(),
       result.getId(),
       result.getEntity().getUsername(),
-      result.getEntity().getContributionTime() != null ?
-        result.getEntity().getContributionTime().atZone(ZONE_ID) : null);
+      result.getEntity().getContributionTime() != null ? result.getEntity().getContributionTime().atZone(ZONE_ID) : null,
+      result.getEntity().getDescription()
+    );
   }
 
   @GET

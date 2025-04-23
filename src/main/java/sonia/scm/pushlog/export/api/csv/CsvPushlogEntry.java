@@ -28,13 +28,15 @@ import java.time.ZonedDateTime;
  * @param revision  {@link String}
  * @param username  {@link String}
  * @param timestamp {@link ZonedDateTime}
+ * @param description {@link String}
  */
 @JsonPropertyOrder({"pushlogId", "revision", "username", "timestamp"})
 public record CsvPushlogEntry(
   long pushlogId,
   String revision,
   String username,
-  @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss.SSS 'UTC'Z") ZonedDateTime timestamp) {
+  @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss.SSS 'UTC'Z") ZonedDateTime timestamp,
+  String description) {
 
-  public static final String HEADER = "PushlogId,Revision,Username,Timestamp";
+  public static final String HEADER = "PushlogId,Revision,Username,Timestamp,Description";
 }

@@ -83,6 +83,50 @@ class PushlogManagerTest {
   }
 
   @Test
+  void shouldStoreNewEntriesWithRevisionMap(PushlogEntryStoreFactory storeFactory) {
+    PushlogEntry firstEntry = new PushlogEntry("trillian", Instant.now(), "Commit Message");
+    PushlogEntry secondEntry = new PushlogEntry("trillian", Instant.now(), "Second Message");
+    manager.storeRevisionEntryMap(Map.of("r1", firstEntry, "r2", secondEntry), repository);
+
+    Map<String, PushlogEntry> all = storeFactory.getMutable(repository).getAll();
+    assertThat(all).hasSize(2);
+    assertThat(all.get("r1")).isEqualTo(firstEntry);
+    assertThat(all.get("r2")).isEqualTo(secondEntry);
+    assertThat(all.get("r1").getPushlogId()).isEqualTo(1);
+    assertThat(all.get("r2").getPushlogId()).isEqualTo(1);
+  }
+
+  @Test
+  void shouldIncrementPushlogIdWithRevisionMap(PushlogEntryStoreFactory storeFactory) {
+    manager.storeRevisionEntryMap(
+      Map.of("r1", new PushlogEntry("trillian", Instant.now(), "Commit Message")),
+      repository
+    );
+    manager.storeRevisionEntryMap(
+      Map.of("r2", new PushlogEntry("trillian", Instant.now(), "Commit Message")),
+      repository
+    );
+
+    Map<String, PushlogEntry> all = storeFactory.getMutable(repository).getAll();
+    assertThat(all.get("r1").getPushlogId()).isEqualTo(1);
+    assertThat(all.get("r2").getPushlogId()).isEqualTo(2);
+  }
+
+  @Test
+  void shouldNotReplaceExistingEntriesWithRevisionMap(PushlogEntryStoreFactory storeFactory) {
+    PushlogEntry existingEntry = new PushlogEntry("trillian", Instant.now(), "Commit Message");
+    manager.storeRevisionEntryMap(Map.of("r1", existingEntry), repository);
+
+    PushlogEntry newEntry = new PushlogEntry("arthur", Instant.now(), "New Message");
+    manager.storeRevisionEntryMap(Map.of("r1", newEntry, "r2", newEntry), repository);
+
+    Map<String, PushlogEntry> all = storeFactory.getMutable(repository).getAll();
+    assertThat(all).hasSize(2);
+    assertThat(all.get("r1")).isEqualTo(existingEntry);
+    assertThat(all.get("r2")).isEqualTo(newEntry);
+  }
+
+  @Test
   void shouldSortContributionsById(PushlogEntryStoreFactory storeFactory) {
     int entries = 5;
     Instant baseTime = Instant.now().plusSeconds(1800);
