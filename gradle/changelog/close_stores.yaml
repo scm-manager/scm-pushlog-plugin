@@ -1,0 +1,2 @@
+- type: fixed
+  description: Store closed correctly in update step for queryable stores

@@ -21,10 +21,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import sonia.scm.repository.Repository;
 import sonia.scm.repository.RepositoryTestData;
+import sonia.scm.store.QueryableMutableStore;
 import sonia.scm.store.QueryableStore;
 import sonia.scm.store.QueryableStoreExtension;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -46,10 +48,10 @@ class PushlogManagerTest {
 
   @Test
   void shouldStoreNewEntries(PushlogEntryStoreFactory storeFactory) {
-    PushlogEntry entry = new PushlogEntry("trillian", Instant.now());
+    PushlogEntry entry = new PushlogEntry("trillian", now());
     manager.store(entry, repository, List.of("r1", "r2"));
 
-    Map<String, PushlogEntry> all = storeFactory.getMutable(repository).getAll();
+    Map<String, PushlogEntry> all = getAllPushlogs(storeFactory);
     assertThat(all).hasSize(2);
     assertThat(all.get("r1")).isEqualTo(entry);
     assertThat(all.get("r2")).isEqualTo(entry);
@@ -59,24 +61,24 @@ class PushlogManagerTest {
 
   @Test
   void shouldIncrementPushlogId(PushlogEntryStoreFactory storeFactory) {
-    manager.store(new PushlogEntry("trillian", Instant.now()), repository, List.of("r1"));
-    manager.store(new PushlogEntry("trillian", Instant.now()), repository, List.of("r2"));
+    manager.store(new PushlogEntry("trillian", now()), repository, List.of("r1"));
+    manager.store(new PushlogEntry("trillian", now()), repository, List.of("r2"));
 
-    Map<String, PushlogEntry> all = storeFactory.getMutable(repository).getAll();
+    Map<String, PushlogEntry> all = getAllPushlogs(storeFactory);
     assertThat(all.get("r1").getPushlogId()).isEqualTo(1);
     assertThat(all.get("r2").getPushlogId()).isEqualTo(2);
   }
 
   @Test
   void shouldNotReplaceExistingEntries(PushlogEntryStoreFactory storeFactory) {
-    PushlogEntry existingEntry = new PushlogEntry("trillian", Instant.now());
+    PushlogEntry existingEntry = new PushlogEntry("trillian", now());
     manager.store(existingEntry, repository, List.of("r1"));
 
-    PushlogEntry newEntry = new PushlogEntry("arthur", Instant.now());
+    PushlogEntry newEntry = new PushlogEntry("arthur", now());
     manager.store(newEntry, repository, List.of("r1", "r2"));
 
 
-    Map<String, PushlogEntry> all = storeFactory.getMutable(repository).getAll();
+    Map<String, PushlogEntry> all = getAllPushlogs(storeFactory);
     assertThat(all).hasSize(2);
     assertThat(all.get("r1")).isEqualTo(existingEntry);
     assertThat(all.get("r2")).isEqualTo(newEntry);
@@ -84,11 +86,11 @@ class PushlogManagerTest {
 
   @Test
   void shouldStoreNewEntriesWithRevisionMap(PushlogEntryStoreFactory storeFactory) {
-    PushlogEntry firstEntry = new PushlogEntry("trillian", Instant.now(), "Commit Message");
-    PushlogEntry secondEntry = new PushlogEntry("trillian", Instant.now(), "Second Message");
+    PushlogEntry firstEntry = new PushlogEntry("trillian", now(), "Commit Message");
+    PushlogEntry secondEntry = new PushlogEntry("trillian", now(), "Second Message");
     manager.storeRevisionEntryMap(Map.of("r1", firstEntry, "r2", secondEntry), repository);
 
-    Map<String, PushlogEntry> all = storeFactory.getMutable(repository).getAll();
+    Map<String, PushlogEntry> all = getAllPushlogs(storeFactory);
     assertThat(all).hasSize(2);
     assertThat(all.get("r1")).isEqualTo(firstEntry);
     assertThat(all.get("r2")).isEqualTo(secondEntry);
@@ -99,28 +101,28 @@ class PushlogManagerTest {
   @Test
   void shouldIncrementPushlogIdWithRevisionMap(PushlogEntryStoreFactory storeFactory) {
     manager.storeRevisionEntryMap(
-      Map.of("r1", new PushlogEntry("trillian", Instant.now(), "Commit Message")),
+      Map.of("r1", new PushlogEntry("trillian", now(), "Commit Message")),
       repository
     );
     manager.storeRevisionEntryMap(
-      Map.of("r2", new PushlogEntry("trillian", Instant.now(), "Commit Message")),
+      Map.of("r2", new PushlogEntry("trillian", now(), "Commit Message")),
       repository
     );
 
-    Map<String, PushlogEntry> all = storeFactory.getMutable(repository).getAll();
+    Map<String, PushlogEntry> all = getAllPushlogs(storeFactory);
     assertThat(all.get("r1").getPushlogId()).isEqualTo(1);
     assertThat(all.get("r2").getPushlogId()).isEqualTo(2);
   }
 
   @Test
   void shouldNotReplaceExistingEntriesWithRevisionMap(PushlogEntryStoreFactory storeFactory) {
-    PushlogEntry existingEntry = new PushlogEntry("trillian", Instant.now(), "Commit Message");
+    PushlogEntry existingEntry = new PushlogEntry("trillian", now(), "Commit Message");
     manager.storeRevisionEntryMap(Map.of("r1", existingEntry), repository);
 
-    PushlogEntry newEntry = new PushlogEntry("arthur", Instant.now(), "New Message");
+    PushlogEntry newEntry = new PushlogEntry("arthur", now(), "New Message");
     manager.storeRevisionEntryMap(Map.of("r1", newEntry, "r2", newEntry), repository);
 
-    Map<String, PushlogEntry> all = storeFactory.getMutable(repository).getAll();
+    Map<String, PushlogEntry> all = getAllPushlogs(storeFactory);
     assertThat(all).hasSize(2);
     assertThat(all.get("r1")).isEqualTo(existingEntry);
     assertThat(all.get("r2")).isEqualTo(newEntry);
@@ -134,11 +136,21 @@ class PushlogManagerTest {
       PushlogEntry entry = new PushlogEntry("user" + i, baseTime.plusSeconds(i * 10));
       manager.store(entry, repository, List.of("r" + (5 - i)));
     }
-    assertThat(storeFactory.getMutable(repository).getAll()).hasSize(entries);
+    assertThat(getAllPushlogs(storeFactory)).hasSize(entries);
 
     Collection<QueryableStore.Result<PushlogEntry>> all = new ArrayList<>();
     manager.doExport(repository, all::add, QueryableStore.Order.ASC);
 
     assertThat(all).extracting(r -> r.getEntity().getPushlogId()).containsExactly(1L, 2L, 3L, 4L, 5L);
+  }
+
+  private static Instant now() {
+    return Instant.now().truncatedTo(ChronoUnit.MINUTES);
+  }
+
+  private Map<String, PushlogEntry> getAllPushlogs(PushlogEntryStoreFactory storeFactory) {
+    try (QueryableMutableStore<PushlogEntry> store = storeFactory.getMutable(repository)) {
+      return store.getAll();
+    }
   }
 }

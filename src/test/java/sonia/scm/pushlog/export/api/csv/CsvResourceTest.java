@@ -34,6 +34,7 @@ import sonia.scm.repository.NamespaceAndName;
 import sonia.scm.repository.Repository;
 import sonia.scm.repository.RepositoryManager;
 import sonia.scm.repository.RepositoryTestData;
+import sonia.scm.store.QueryableMutableStore;
 import sonia.scm.store.QueryableStoreExtension;
 import sonia.scm.web.RestDispatcher;
 
@@ -116,8 +117,10 @@ class CsvResourceTest {
   }
 
   void setDbResult(Map<String, PushlogEntry> pushlogs) {
-    for (Map.Entry<String, PushlogEntry> pushlog : pushlogs.entrySet()) {
-      entryStoreFactory.getMutable(repository).put(pushlog.getKey(), pushlog.getValue());
+    try (QueryableMutableStore<PushlogEntry> store = entryStoreFactory.getMutable(repository)) {
+      for (Map.Entry<String, PushlogEntry> pushlog : pushlogs.entrySet()) {
+        store.put(pushlog.getKey(), pushlog.getValue());
+      }
     }
   }
 

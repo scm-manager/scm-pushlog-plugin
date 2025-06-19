@@ -27,6 +27,7 @@ import sonia.scm.pushlog.PushlogEntry;
 import sonia.scm.pushlog.PushlogEntryStoreFactory;
 import sonia.scm.store.DataStoreFactory;
 import sonia.scm.store.InMemoryByteDataStoreFactory;
+import sonia.scm.store.QueryableMutableStore;
 import sonia.scm.store.QueryableStoreExtension;
 import sonia.scm.store.QueryableStoreFactory;
 import sonia.scm.update.StoreUpdateStepUtilFactory;
@@ -76,10 +77,12 @@ class MoveToQueryableUpdateStepTest {
 
     updateStep.doUpdate(new RepositoryUpdateContext(repositoryId));
 
-    Map<String, PushlogEntry> all = pushlogStoreFactory.getMutable(repositoryId).getAll();
-    assertThat(all).hasSize(1);
-    assertThat(all.get("42"))
-      .extracting("username")
-      .isEqualTo("trillian");
+    try (QueryableMutableStore<PushlogEntry> store = pushlogStoreFactory.getMutable(repositoryId)) {
+      Map<String, PushlogEntry> all = store.getAll();
+      assertThat(all).hasSize(1);
+      assertThat(all.get("42"))
+        .extracting("username")
+        .isEqualTo("trillian");
+    }
   }
 }

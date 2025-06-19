@@ -61,22 +61,24 @@ public class MoveToQueryableUpdateStep implements RepositoryUpdateStep {
       .build();
 
     oldStore.getOptional("pushlog")
-      .ifPresent(pushlog -> utilFactory
-        .forQueryableType(PushlogEntry.class, repositoryUpdateContext.getRepositoryId())
-        .writeAll(
-          pushlog.entries.stream().flatMap(entry -> {
-            Instant contributionTime = entry.getContributionTime() == null
-              ? null
-              : Instant.ofEpochMilli(entry.getContributionTime());
-            return entry.getChangesets()
-              .stream()
-              .map(changeset -> new QueryableMaintenanceStore.Row<>(
-                new String[]{repositoryUpdateContext.getRepositoryId()},
-                String.valueOf(changeset),
-                new PushlogEntry(entry.getId(), entry.getUsername(), contributionTime, null)
-              ));
-          })
-        ));
+      .ifPresent(pushlog -> {
+        try (QueryableMaintenanceStore<PushlogEntry> store = utilFactory.forQueryableType(PushlogEntry.class, repositoryUpdateContext.getRepositoryId())) {
+          store.writeAll(
+            pushlog.entries.stream().flatMap(entry -> {
+              Instant contributionTime = entry.getContributionTime() == null
+                ? null
+                : Instant.ofEpochMilli(entry.getContributionTime());
+              return entry.getChangesets()
+                .stream()
+                .map(changeset -> new QueryableMaintenanceStore.Row<>(
+                  new String[]{repositoryUpdateContext.getRepositoryId()},
+                  String.valueOf(changeset),
+                  new PushlogEntry(entry.getId(), entry.getUsername(), contributionTime, null)
+                ));
+            })
+          );
+        }
+      });
   }
 
   @Override
