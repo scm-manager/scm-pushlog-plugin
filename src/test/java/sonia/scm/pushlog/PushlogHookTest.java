@@ -132,7 +132,7 @@ class PushlogHookTest {
     when(changeset2.getDescription()).thenReturn("Second commit message");
     executeSuccessfulPushTestCases(() -> {
       pushlogHook.onEvent(event);
-      verify(pushlogManager).storeRevisionEntryMap(
+      verify(pushlogManager).store(
         Map.of(
           "rev1", new PushlogEntry("testUser", creationDate, "Commit Message"),
           "rev2", new PushlogEntry("testUser", creationDate, "Second commit message")
@@ -148,7 +148,7 @@ class PushlogHookTest {
     when(changeset2.getDescription()).thenReturn("b".repeat(101));
     executeSuccessfulPushTestCases(() -> {
       pushlogHook.onEvent(event);
-      verify(pushlogManager).storeRevisionEntryMap(
+      verify(pushlogManager).store(
         Map.of(
           "rev1", new PushlogEntry("testUser", creationDate, "a".repeat(100)),
           "rev2", new PushlogEntry("testUser", creationDate, "b".repeat(100) + "...")
@@ -164,7 +164,7 @@ class PushlogHookTest {
     when(changeset2.getDescription()).thenReturn("1. Line\n2. Line\n3. Line");
     executeSuccessfulPushTestCases(() -> {
       pushlogHook.onEvent(event);
-      verify(pushlogManager).storeRevisionEntryMap(
+      verify(pushlogManager).store(
         Map.of(
           "rev1", new PushlogEntry("testUser", creationDate, "First Line"),
           "rev2", new PushlogEntry("testUser", creationDate, "1. Line")
@@ -180,7 +180,7 @@ class PushlogHookTest {
     when(changeset2.getDescription()).thenReturn("b".repeat(101) + "\nSecond Line");
     executeSuccessfulPushTestCases(() -> {
       pushlogHook.onEvent(event);
-      verify(pushlogManager).storeRevisionEntryMap(
+      verify(pushlogManager).store(
         Map.of(
           "rev1", new PushlogEntry("testUser", creationDate, "First Line"),
           "rev2", new PushlogEntry("testUser", creationDate, "b".repeat(100) + "...")

@@ -90,7 +90,7 @@ public class PushlogHook {
         new PushlogEntry(username, creationDate, limitChangesetDescription(c.getDescription()))
       );
     }
-    pushlogManager.storeRevisionEntryMap(revisionWithPushlogs, repository);
+    pushlogManager.store(revisionWithPushlogs, repository);
   }
 
   //Take the first line of the description and limit it to the maximum description length

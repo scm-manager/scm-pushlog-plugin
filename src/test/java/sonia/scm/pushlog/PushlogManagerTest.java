@@ -29,7 +29,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -49,7 +48,7 @@ class PushlogManagerTest {
   @Test
   void shouldStoreNewEntries(PushlogEntryStoreFactory storeFactory) {
     PushlogEntry entry = new PushlogEntry("trillian", now());
-    manager.store(entry, repository, List.of("r1", "r2"));
+    manager.store(Map.of("r1", entry, "r2", entry), repository);
 
     Map<String, PushlogEntry> all = getAllPushlogs(storeFactory);
     assertThat(all).hasSize(2);
@@ -61,8 +60,8 @@ class PushlogManagerTest {
 
   @Test
   void shouldIncrementPushlogId(PushlogEntryStoreFactory storeFactory) {
-    manager.store(new PushlogEntry("trillian", now()), repository, List.of("r1"));
-    manager.store(new PushlogEntry("trillian", now()), repository, List.of("r2"));
+    manager.store(Map.of("r1", new PushlogEntry("trillian", now())), repository);
+    manager.store(Map.of("r2", new PushlogEntry("trillian", now())), repository);
 
     Map<String, PushlogEntry> all = getAllPushlogs(storeFactory);
     assertThat(all.get("r1").getPushlogId()).isEqualTo(1);
@@ -72,10 +71,10 @@ class PushlogManagerTest {
   @Test
   void shouldNotReplaceExistingEntries(PushlogEntryStoreFactory storeFactory) {
     PushlogEntry existingEntry = new PushlogEntry("trillian", now());
-    manager.store(existingEntry, repository, List.of("r1"));
+    manager.store(Map.of("r1", existingEntry), repository);
 
     PushlogEntry newEntry = new PushlogEntry("arthur", now());
-    manager.store(newEntry, repository, List.of("r1", "r2"));
+    manager.store(Map.of("r1", newEntry, "r2", newEntry), repository);
 
 
     Map<String, PushlogEntry> all = getAllPushlogs(storeFactory);
@@ -88,7 +87,7 @@ class PushlogManagerTest {
   void shouldStoreNewEntriesWithRevisionMap(PushlogEntryStoreFactory storeFactory) {
     PushlogEntry firstEntry = new PushlogEntry("trillian", now(), "Commit Message");
     PushlogEntry secondEntry = new PushlogEntry("trillian", now(), "Second Message");
-    manager.storeRevisionEntryMap(Map.of("r1", firstEntry, "r2", secondEntry), repository);
+    manager.store(Map.of("r1", firstEntry, "r2", secondEntry), repository);
 
     Map<String, PushlogEntry> all = getAllPushlogs(storeFactory);
     assertThat(all).hasSize(2);
@@ -100,27 +99,31 @@ class PushlogManagerTest {
 
   @Test
   void shouldIncrementPushlogIdWithRevisionMap(PushlogEntryStoreFactory storeFactory) {
-    manager.storeRevisionEntryMap(
+    manager.store(
       Map.of("r1", new PushlogEntry("trillian", now(), "Commit Message")),
       repository
     );
-    manager.storeRevisionEntryMap(
-      Map.of("r2", new PushlogEntry("trillian", now(), "Commit Message")),
+    manager.store(
+      Map.of(
+        "r2", new PushlogEntry("trillian", now(), "Commit Message"),
+        "r3", new PushlogEntry("trillian", now(), "Commit Message")
+      ),
       repository
     );
 
     Map<String, PushlogEntry> all = getAllPushlogs(storeFactory);
     assertThat(all.get("r1").getPushlogId()).isEqualTo(1);
     assertThat(all.get("r2").getPushlogId()).isEqualTo(2);
+    assertThat(all.get("r2").getPushlogId()).isEqualTo(2);
   }
 
   @Test
   void shouldNotReplaceExistingEntriesWithRevisionMap(PushlogEntryStoreFactory storeFactory) {
     PushlogEntry existingEntry = new PushlogEntry("trillian", now(), "Commit Message");
-    manager.storeRevisionEntryMap(Map.of("r1", existingEntry), repository);
+    manager.store(Map.of("r1", existingEntry), repository);
 
     PushlogEntry newEntry = new PushlogEntry("arthur", now(), "New Message");
-    manager.storeRevisionEntryMap(Map.of("r1", newEntry, "r2", newEntry), repository);
+    manager.store(Map.of("r1", newEntry, "r2", newEntry), repository);
 
     Map<String, PushlogEntry> all = getAllPushlogs(storeFactory);
     assertThat(all).hasSize(2);
@@ -134,7 +137,7 @@ class PushlogManagerTest {
     Instant baseTime = Instant.now().plusSeconds(1800);
     for (int i = 0; i < entries; i++) {
       PushlogEntry entry = new PushlogEntry("user" + i, baseTime.plusSeconds(i * 10));
-      manager.store(entry, repository, List.of("r" + (5 - i)));
+      manager.store(Map.of("r" + (5 - i), entry), repository);
     }
     assertThat(getAllPushlogs(storeFactory)).hasSize(entries);
 
