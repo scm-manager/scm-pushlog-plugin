@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 3.3.0 - 2025-08-04
+### Added
+- The first line of each commit message is now added to the pushlog csv export
+
+### Fixed
+- Store closed correctly in update step for queryable stores
+
 ## 3.2.0 - 2025-04-15
 ### Added
 - CSV export for repository pushlog entries
