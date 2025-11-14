@@ -24,10 +24,12 @@ import sonia.scm.repository.Repository;
 import sonia.scm.store.DataStore;
 import sonia.scm.store.DataStoreFactory;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 
 /**
  * @author Sebastian Sdorra
@@ -39,10 +41,7 @@ public class PushlogManager {
 
   private static final Logger logger = LoggerFactory.getLogger(PushlogManager.class);
 
-  private static final Object LOCK_STORE = new Object();
-  private static final Object LOCK_GET = new Object();
-
-  private final Map<String, Lock> locks = new HashMap<>();
+  private final Map<String, Lock> locks = Collections.synchronizedMap(new HashMap<>());
   private final DataStoreFactory dataStoreFactory;
 
   @Inject
@@ -50,54 +49,34 @@ public class PushlogManager {
     this.dataStoreFactory = dataStoreFactory;
   }
 
-
-  public void store(Pushlog pushlog, Repository repository) {
-    synchronized (LOCK_STORE) {
-      try {
-        logger.debug("store pushlog for repository {}", repository);
-        getDatastore(repository).put(NAME, pushlog);
-      } finally {
-        logger.trace("unlock repository {}", repository);
-        getLock(repository.getId()).unlock();
-      }
-    }
+  public Pushlog get(Repository repository) {
+    return getDatastore(repository).getOptional(NAME).orElseGet(Pushlog::new);
   }
 
-  public Pushlog get(Repository repository) {
-    Pushlog pushlog = getDatastore(repository).get(NAME);
+  public void editPushlog(Repository repository, Consumer<Pushlog> callback) {
+    Lock lock = getLock(repository.getId());
+    try {
+      logger.trace("acquiring lock for pushlog for repository {}", repository);
+      lock.lock();
+      logger.trace("locked pushlog for repository {}", repository);
 
-    if (pushlog == null) {
-      pushlog = new Pushlog();
+
+      Pushlog pushlog = get(repository);
+      callback.accept(pushlog);
+
+      logger.debug("store pushlog for repository {}", repository);
+      getDatastore(repository).put(NAME, pushlog);
+    } finally {
+      logger.trace("unlock repository {}", repository);
+      getLock(repository.getId()).unlock();
     }
-
-    return pushlog;
   }
 
   private DataStore<Pushlog> getDatastore(Repository repository) {
     return dataStoreFactory.withType(Pushlog.class).withName(NAME).forRepository(repository).build();
   }
 
-
-  public Pushlog getAndLock(Repository repository) {
-    synchronized (LOCK_GET) {
-      getLock(repository.getId()).lock();
-
-      logger.trace("lock pushlog for repository {}", repository);
-
-      return get(repository);
-    }
-  }
-
   private Lock getLock(String id) {
-    Lock lock = locks.get(id);
-
-    if (lock == null) {
-      lock = new ReentrantLock();
-      locks.put(id, lock);
-    }
-
-    return lock;
+    return locks.computeIfAbsent(id, _i -> new ReentrantLock());
   }
-
-
 }

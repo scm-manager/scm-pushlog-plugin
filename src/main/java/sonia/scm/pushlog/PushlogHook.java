@@ -71,29 +71,22 @@ public class PushlogHook {
 
   private void handlePush(String username, Repository repository,
                           Iterable<Changeset> changesets) {
-    Pushlog pushlog = null;
+    pushlogManager.editPushlog(
+      repository,
+      pushlog -> {
+        PushlogEntry entry = pushlog.createEntry(username);
 
-    try {
-      pushlog = pushlogManager.getAndLock(repository);
-
-      PushlogEntry entry = pushlog.createEntry(username);
-
-      for (Changeset c : changesets) {
-        if (pushlog.get(c.getId()).isPresent()) {
-          logger.warn("found changeset with existing log entry (id {} in {}); skipping further analysis for this push", c.getId(), repository);
-          break;
-        } else {
-          entry.add(c.getId());
+        for (Changeset c : changesets) {
+          if (pushlog.get(c.getId()).isPresent()) {
+            logger.warn("found changeset with existing log entry (id {} in {}); skipping further analysis for this push", c.getId(), repository);
+            break;
+          } else {
+            entry.add(c.getId());
+          }
         }
       }
-
-    } finally {
-      if (pushlog != null) {
-        pushlogManager.store(pushlog, repository);
-      }
-    }
+    );
   }
-
 
   private void handlePushEvent(String username, RepositoryHookEvent event) {
     Repository repository = event.getRepository();
@@ -110,5 +103,4 @@ public class PushlogHook {
       logger.warn("received hook without repository");
     }
   }
-
 }

@@ -1,0 +1,2 @@
+- type: fixed
+  description: Pushlogs not written after deadlock in event bus
