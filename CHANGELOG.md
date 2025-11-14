@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Improved label for push log entry
 
+## 3.1.1 - 2025-11-14
+### Fixed
+- Pushlogs not written after deadlock in event bus
+
 ## 3.1.0 - 2024-12-05
 ### Added
 - Timestamp of first push is shown in "pushed by" contributor row
