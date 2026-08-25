@@ -24,6 +24,7 @@ import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import sonia.scm.migration.RepositoryUpdateContext;
 import sonia.scm.migration.RepositoryUpdateStep;
 import sonia.scm.plugin.Extension;
@@ -40,6 +41,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+@Slf4j
 @Extension
 public class MoveToQueryableUpdateStep implements RepositoryUpdateStep {
 
@@ -60,25 +62,32 @@ public class MoveToQueryableUpdateStep implements RepositoryUpdateStep {
       .forRepository(repositoryUpdateContext.getRepositoryId())
       .build();
 
-    oldStore.getOptional("pushlog")
-      .ifPresent(pushlog -> {
-        try (QueryableMaintenanceStore<PushlogEntry> store = utilFactory.forQueryableType(PushlogEntry.class, repositoryUpdateContext.getRepositoryId())) {
-          store.writeAll(
-            pushlog.entries.stream().flatMap(entry -> {
-              Instant contributionTime = entry.getContributionTime() == null
-                ? null
-                : Instant.ofEpochMilli(entry.getContributionTime());
-              return entry.getChangesets()
-                .stream()
-                .map(changeset -> new QueryableMaintenanceStore.Row<>(
-                  new String[]{repositoryUpdateContext.getRepositoryId()},
-                  String.valueOf(changeset),
-                  new PushlogEntry(entry.getId(), entry.getUsername(), contributionTime, null)
-                ));
-            })
-          );
-        }
-      });
+    try {
+      oldStore.getOptional("pushlog")
+        .ifPresent(pushlog -> {
+          try (QueryableMaintenanceStore<PushlogEntry> store = utilFactory.forQueryableType(PushlogEntry.class, repositoryUpdateContext.getRepositoryId())) {
+            if (pushlog.entries == null || pushlog.entries.isEmpty()) {
+              return;
+            }
+            store.writeAll(
+              pushlog.entries.stream().flatMap(entry -> {
+                Instant contributionTime = entry.getContributionTime() == null
+                  ? null
+                  : Instant.ofEpochMilli(entry.getContributionTime());
+                return entry.getChangesets()
+                  .stream()
+                  .map(changeset -> new QueryableMaintenanceStore.Row<>(
+                    new String[]{repositoryUpdateContext.getRepositoryId()},
+                    String.valueOf(changeset),
+                    new PushlogEntry(entry.getId(), entry.getUsername(), contributionTime, null)
+                  ));
+              })
+            );
+          }
+        });
+    } catch (Exception e) {
+      log.warn("Failed to migrate pushlog for repository {}", repositoryUpdateContext.getRepositoryId(), e);
+    }
   }
 
   @Override
