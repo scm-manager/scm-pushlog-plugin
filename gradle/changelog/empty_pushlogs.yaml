@@ -1,2 +1,0 @@
-- type: fixed
-  description: Error due to NullPointerException in startup by handling empty pushlogs in update step
