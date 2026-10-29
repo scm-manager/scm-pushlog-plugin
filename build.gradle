@@ -19,14 +19,13 @@ plugins {
 }
 
 scmPlugin {
-  scmVersion = "3.9.0"
+  scmVersion = "4.0.0-SNAPSHOT"
   displayName = "Pushlog"
   description = "Tracks who pushed what to a repository"
   author = "Cloudogu GmbH"
   category = "Administration"
-
 }
 
 dependencies {
-  implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-csv:2.18.2")
+  implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-csv:2.21.0")
 }

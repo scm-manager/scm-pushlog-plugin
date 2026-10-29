@@ -18,8 +18,8 @@ import { binder, extensionPoints } from "@scm-manager/ui-extensions";
 import PushlogDetails from "./PushlogDetails";
 import RepositoryPushlogDownloadLink from "./RepositoryPushlogDownloadLink";
 
-binder.bind("changesets.contributor.table.row", PushlogDetails, {
-  predicate: (props) => !!props.changeset._embedded.pushlogDetails,
+binder.bind<extensionPoints.ChangesetsContributorTableRow>("changesets.contributor.table.row", PushlogDetails, {
+  predicate: (props) => !!props.changeset._embedded?.pushlogDetails,
 });
 
 binder.bind<extensionPoints.RepositoryInformationTableBottom>("repository.information.table.bottom", RepositoryPushlogDownloadLink, {

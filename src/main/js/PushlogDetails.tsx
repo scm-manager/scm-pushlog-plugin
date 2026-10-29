@@ -14,10 +14,11 @@
  * along with this program. If not, see https://www.gnu.org/licenses/.
  */
 
-import React from "react";
-import { Changeset } from "@scm-manager/ui-types";
-import { Contributor, ContributorRow, DateFromNow } from "@scm-manager/ui-components";
+import React, { FC } from "react";
 import { useTranslation } from "react-i18next";
+import { Contributor, ContributorRow } from "@scm-manager/ui-components";
+import { DateFromNow } from "@scm-manager/ui-core";
+import { Changeset, Person } from "@scm-manager/ui-types";
 
 type Props = {
   changeset: Changeset;
@@ -25,13 +26,13 @@ type Props = {
 
 type PushlogDetails = {
   contributorType: string;
-  person: string;
+  person: Person;
   publishedTime: string;
 };
 
-const PushlogDetails: React.FC<Props> = ({ changeset }) => {
+const PushlogDetails: FC<Props> = ({ changeset }) => {
   const [t] = useTranslation("plugins");
-  const pushlogDetails = changeset._embedded.pushlogDetails as PushlogDetails;
+  const pushlogDetails = changeset._embedded?.pushlogDetails as PushlogDetails;
 
   return (
     <ContributorRow label={t("changeset.contributor.type.pushedBy")}>
@@ -40,4 +41,5 @@ const PushlogDetails: React.FC<Props> = ({ changeset }) => {
     </ContributorRow>
   );
 };
+
 export default PushlogDetails;

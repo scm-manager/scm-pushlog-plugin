@@ -15,8 +15,8 @@
  */
 
 import React, { FC } from "react";
-import { Repository } from "@scm-manager/ui-types";
 import { useTranslation } from "react-i18next";
+import { Repository } from "@scm-manager/ui-types";
 
 type Props = {
   repository: Repository;
@@ -30,12 +30,10 @@ const RepositoryPushlogDownloadLink: FC<Props> = ({ repository }) => {
     <tr>
       <th>{t("scm-pushlog-plugin.repository.key")}</th>
       <td>
-        <a href={downloadLink}>
-          {t("scm-pushlog-plugin.repository.link")}
-        </a>
+        <a href={downloadLink}>{t("scm-pushlog-plugin.repository.link")}</a>
       </td>
     </tr>
   );
 };
-export default RepositoryPushlogDownloadLink;
 
+export default RepositoryPushlogDownloadLink;
